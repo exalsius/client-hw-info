@@ -1,13 +1,42 @@
 use std::path::Path;
 use std::process::Command;
+
+use argh::FromArgs;
+use serde::Serialize;
+use serde::de::Unexpected::Str;
 use sysinfo::{Disks, System};
 
+#[derive(FromArgs)]
+///   Parameters for the client hardware info tool.
+struct CliArguments {
+    /// the auth token for sending a heartbeat to the API.
+    #[argh(option)]
+    auth_token: Option<String>,
+}
+
 fn main() {
+    dotenvy::dotenv().ok();
+    let cli_arguments: CliArguments = argh::from_env();
+
+    let api_url = std::env::var("API_URL").expect("API_URL not set");
+
+    let mut node_hardware = NodeHardware {
+        gpu_count: 0,
+        gpu_vendor: String::from("unknown"),
+        gpu_type: String::from("unknown"),
+        gpu_memory: 0,
+        cpu_cores: 0,
+        memory_gb: 0,
+        storage_gb: 0,
+    };
+
     let mut sys = System::new_all();
     sys.refresh_all();
 
     println!("Total memory: {} GiB", bytes_to_gib(sys.total_memory()));
+    node_hardware.memory_gb = bytes_to_gib(sys.total_memory());
     println!("Total number of CPU threads: {}", sys.cpus().len());
+    node_hardware.cpu_cores = sys.cpus().len() as u64;
 
     let disks = Disks::new_with_refreshed_list();
     if let Some(disk) = disks
@@ -19,6 +48,7 @@ fn main() {
             disk.file_system().to_string_lossy(),
             bytes_to_gb(disk.total_space())
         );
+        node_hardware.storage_gb = bytes_to_gb(disk.total_space());
     }
 
     let output = Command::new("sh")
@@ -35,7 +65,6 @@ fn main() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     println!("GPUs:");
     for line in stdout.lines() {
-
         if let Some(start) = line.rfind('[') {
             if let Some(end) = line[start + 1..].find(']') {
                 let id_str = &line[start + 1..start + 1 + end];
@@ -44,10 +73,21 @@ fn main() {
                 let (gpu_name, vram) = lookup_device(parts[1]);
 
                 if let Some(v) = vendor {
-                    println!("--- Vendor = {}, Model = {} with {} GB of VRAM", v, gpu_name, vram);
+                    println!(
+                        "--- Vendor = {}, Model = {} with {} GB of VRAM",
+                        v, gpu_name, vram
+                    );
+                    node_hardware.gpu_vendor = v.to_owned();
+                    node_hardware.gpu_type = gpu_name.to_owned();
+                    node_hardware.gpu_memory = vram as u64;
+                    node_hardware.gpu_count += 1;
                 }
             }
         }
+    }
+
+    if cli_arguments.auth_token.is_some() {
+        send_heartbeat(&api_url, &node_hardware);
     }
 }
 
@@ -79,4 +119,30 @@ fn lookup_device(device_id: &str) -> (&str, u16) {
         "740f" => ("MI210", 64),
         _ => ("unknown device", 0),
     }
+}
+
+fn send_heartbeat(api_url: &str, node_hardware: &NodeHardware) {
+    let client = reqwest::blocking::Client::new();
+
+    let resp = client.patch(api_url).json(&node_hardware).send();
+
+    match resp {
+        Ok(resp) => {
+            println!("Response: {}", resp.status());
+        }
+        Err(e) => {
+            println!("Error: {}", e);
+        }
+    }
+}
+
+#[derive(Serialize, Debug)]
+struct NodeHardware {
+    gpu_count: u8,
+    gpu_vendor: String,
+    gpu_type: String,
+    gpu_memory: u64,
+    cpu_cores: u64,
+    memory_gb: u64,
+    storage_gb: u64,
 }

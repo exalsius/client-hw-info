@@ -4,4 +4,16 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+reqwest = { version = "=0.12.23", default-features = false, features = [
+    "rustls-tls",
+    "rustls-tls-webpki-roots",
+    "json",
+    "gzip",
+    "deflate",
+    "blocking",
+    "brotli"
+] }
 sysinfo = "0.37.0"
+serde = { version = "1.0.225", features = ["derive"] }
+dotenvy = "0.15.7"
+argh = "0.1.13"
