@@ -1,9 +1,12 @@
-use std::path::Path;
-use std::process::Command;
-
 use argh::FromArgs;
+use dotenvy::from_path;
 use serde::Serialize;
-use serde::de::Unexpected::Str;
+use std::fs::OpenOptions;
+use std::io::Write;
+use std::os::unix::fs::OpenOptionsExt;
+use std::path::{Path, PathBuf};
+use std::process::Command;
+use std::{env, fs};
 use sysinfo::{Disks, System};
 
 #[derive(FromArgs)]
@@ -12,13 +15,31 @@ struct CliArguments {
     /// the auth token for sending a heartbeat to the API.
     #[argh(option)]
     auth_token: Option<String>,
+
+    /// the server API endpoint.
+    #[argh(option)]
+    api_url: Option<String>,
+
+    /// the id of the node where the tool is running.
+    #[argh(option)]
+    node_id: Option<String>,
 }
 
 fn main() {
     dotenvy::dotenv().ok();
     let cli_arguments: CliArguments = argh::from_env();
 
-    let api_url = std::env::var("API_URL").expect("API_URL not set");
+    let (node_id, api_endpoint, auth_tkn) = match lookup_auth_token(
+        cli_arguments.node_id,
+        cli_arguments.api_url,
+        cli_arguments.auth_token,
+    ) {
+        Ok((node_id, api_url, auth_token)) => (node_id, api_url, auth_token),
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            return;
+        }
+    };
 
     let mut node_hardware = NodeHardware {
         gpu_count: 0,
@@ -86,9 +107,7 @@ fn main() {
         }
     }
 
-    if cli_arguments.auth_token.is_some() {
-        send_heartbeat(&api_url, &node_hardware);
-    }
+    send_heartbeat(&node_id, &api_endpoint, &auth_tkn, &node_hardware);
 }
 
 fn bytes_to_gb(bytes: u64) -> u64 {
@@ -121,10 +140,14 @@ fn lookup_device(device_id: &str) -> (&str, u16) {
     }
 }
 
-fn send_heartbeat(api_url: &str, node_hardware: &NodeHardware) {
+fn send_heartbeat(node_id: &str, api_url: &str, auth_token: &str, node_hardware: &NodeHardware) {
     let client = reqwest::blocking::Client::new();
-
-    let resp = client.patch(api_url).json(&node_hardware).send();
+    let final_endpoint = api_url.to_string() + "/node/" + node_id;
+    let resp = client
+        .patch(final_endpoint)
+        .json(&node_hardware)
+        .bearer_auth(auth_token)
+        .send();
 
     match resp {
         Ok(resp) => {
@@ -134,6 +157,72 @@ fn send_heartbeat(api_url: &str, node_hardware: &NodeHardware) {
             println!("Error: {}", e);
         }
     }
+}
+
+fn config_file_path() -> Result<PathBuf, Box<dyn std::error::Error>> {
+    let home = dirs::home_dir().ok_or("HOME not set")?;
+    let dir = home.join(".config").join("exalsius");
+    let file = dir.join("config.env");
+    // Verzeichnis sicherstellen
+    fs::create_dir_all(&dir)?;
+    Ok(file)
+}
+
+/// Falls Datei fehlt: neu anlegen (0600) und Template reinschreiben
+fn ensure_config_file(
+    path: &PathBuf,
+    node_id: Option<&str>,
+    api_url: Option<&str>,
+    auth_token: Option<&str>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if !path.exists() {
+        let mut opts = OpenOptions::new();
+        opts.create(true).write(true).truncate(true);
+        #[cfg(unix)]
+        {
+            // 0600: nur Besitzer darf lesen/schreiben
+            opts.mode(0o600);
+        }
+
+        if node_id.is_none() | api_url.is_none() | auth_token.is_none() {
+            return Err(
+                "node_id, api_url and auth_token must be given if no environment exist".into(),
+            );
+        }
+
+        let mut f = opts.open(path)?;
+        writeln!(f, "NODE_ID={}", node_id.unwrap())?;
+        writeln!(f, "API_URL={}", api_url.unwrap())?;
+        writeln!(f, "AUTH_TOKEN={}", auth_token.unwrap().trim())?;
+    }
+    Ok(())
+}
+
+
+fn lookup_auth_token(
+    node_id: Option<String>,
+    api_url: Option<String>,
+    auth_token: Option<String>,
+) -> Result<(String, String, String), Box<dyn std::error::Error>> {
+    let cfg = config_file_path()?;
+    ensure_config_file(
+        &cfg,
+        node_id.as_deref(),
+        api_url.as_deref(),
+        auth_token.as_deref(),
+    )?;
+
+    from_path(&cfg)?;
+
+    let api_url = env::var("API_URL")?;
+    let auth_token = env::var("AUTH_TOKEN")?;
+    let node_id = env::var("NODE_ID")?;
+
+    if api_url.is_empty() || auth_token.is_empty() {
+        return Err("API_URL or AUTH_TOKEN is empty".into());
+    }
+
+    Ok((node_id, api_url, auth_token))
 }
 
 #[derive(Serialize, Debug)]
