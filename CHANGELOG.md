@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/exalsius/client-hw-info/compare/v1.1.1...v1.2.0) (2025-09-18)
+
+
+### Features
+
+* add uploading build to release ([a473378](https://github.com/exalsius/client-hw-info/commit/a4733782cde6deb242205b7f8745dd9323548f09))
+
 ## [1.1.0](https://github.com/exalsius/client-hw-info/compare/v1.0.1...v1.1.0) (2025-09-18)
 
 
