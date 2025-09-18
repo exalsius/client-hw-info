@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/exalsius/client-hw-info/compare/v1.0.1...v1.1.0) (2025-09-18)
+
+
+### Features
+
+* automatic generation of auth tokes by using a refresh token ([#5](https://github.com/exalsius/client-hw-info/issues/5)) ([bfbd4e7](https://github.com/exalsius/client-hw-info/commit/bfbd4e77120ea50489c56dd7c969c472a8bdeb58))
+
 ## [1.0.1](https://github.com/exalsius/client-hw-info/compare/v1.0.0...v1.0.1) (2025-09-18)
 
 
