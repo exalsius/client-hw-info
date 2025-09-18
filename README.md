@@ -13,5 +13,5 @@ Simply execute ``./target/release/hwinfo`` if you built it or excute the binary 
 There are 3 arguments that need to be passed in order to send a periodical heartbeart to the server:
 
 `--api-url <url>`  Defines the base URL, e.g. https://api.exalsius.ai  
-`--auth_token <token>`  
+`--auth_token <token>` The refresh token.
 `--node-id <id>`  The node id defined during initial connection
