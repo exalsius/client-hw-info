@@ -1,20 +1,21 @@
+mod hardware;
+
 use argh::FromArgs;
 use dotenvy::from_path;
-use serde::Serialize;
+use hardware::NodeHardware;
+use serde::{Deserialize, Serialize};
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::os::unix::fs::OpenOptionsExt;
-use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::path::PathBuf;
 use std::{env, fs};
-use sysinfo::{Disks, System};
 
 #[derive(FromArgs)]
 ///   Parameters for the client hardware info tool.
 struct CliArguments {
-    /// the auth token for sending a heartbeat to the API.
+    /// the refresh token for acquiring the access token.
     #[argh(option)]
-    auth_token: Option<String>,
+    refresh_token: Option<String>,
 
     /// the server API endpoint.
     #[argh(option)]
@@ -23,120 +24,97 @@ struct CliArguments {
     /// the id of the node where the tool is running.
     #[argh(option)]
     node_id: Option<String>,
+
+    /// the auth0 client id.
+    #[argh(option)]
+    auth0_client_id: Option<String>,
+
+    /// the auth0 client domain.
+    #[argh(option)]
+    auth0_client_domain: Option<String>,
 }
 
 fn main() {
     dotenvy::dotenv().ok();
     let cli_arguments: CliArguments = argh::from_env();
 
-    let (node_id, api_endpoint, auth_tkn) = match lookup_auth_token(
-        cli_arguments.node_id,
-        cli_arguments.api_url,
-        cli_arguments.auth_token,
-    ) {
-        Ok((node_id, api_url, auth_token)) => (node_id, api_url, auth_token),
+    let (node_id, api_endpoint, refresh_tkn, auth0_client_id, auth_client_domain) =
+        match lookup_configuration(
+            cli_arguments.node_id,
+            cli_arguments.api_url,
+            cli_arguments.refresh_token,
+            cli_arguments.auth0_client_id,
+            cli_arguments.auth0_client_domain,
+        ) {
+            Ok((node_id, api_url, auth_token, auth0_client_id, auth0_client_domain)) => (
+                node_id,
+                api_url,
+                auth_token,
+                auth0_client_id,
+                auth0_client_domain,
+            ),
+            Err(e) => {
+                eprintln!("Error: {}", e);
+                return;
+            }
+        };
+
+    let auth_token = match get_fresh_auth_token(&refresh_tkn, &auth0_client_id, &auth_client_domain)
+    {
+        Ok(token) => token,
         Err(e) => {
             eprintln!("Error: {}", e);
             return;
         }
     };
 
-    let mut node_hardware = NodeHardware {
-        gpu_count: 0,
-        gpu_vendor: String::from("unknown"),
-        gpu_type: String::from("unknown"),
-        gpu_memory: 0,
-        cpu_cores: 0,
-        memory_gb: 0,
-        storage_gb: 0,
+
+    let node_hardware = match hardware::collect_client_hardware() {
+        Ok(node_hardware) => node_hardware,
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            return;
+        }
     };
 
-    let mut sys = System::new_all();
-    sys.refresh_all();
 
-    println!("Total memory: {} GiB", bytes_to_gib(sys.total_memory()));
-    node_hardware.memory_gb = bytes_to_gib(sys.total_memory());
-    println!("Total number of CPU threads: {}", sys.cpus().len());
-    node_hardware.cpu_cores = sys.cpus().len() as u64;
 
-    let disks = Disks::new_with_refreshed_list();
-    if let Some(disk) = disks
-        .iter()
-        .find(|disk| disk.mount_point() == Path::new("/"))
-    {
-        println!(
-            "Root disk with filesystem {} and {} GB storage",
-            disk.file_system().to_string_lossy(),
-            bytes_to_gb(disk.total_space())
-        );
-        node_hardware.storage_gb = bytes_to_gb(disk.total_space());
-    }
+    send_heartbeat(&node_id, &api_endpoint, &auth_token, &node_hardware);
+}
 
-    let output = Command::new("sh")
-        .arg("-c")
-        .arg(r#"lspci -nn | egrep -i 'vga|3d|display'"#)
-        .output()
-        .expect("Exception running lspci");
 
-    if !output.status.success() {
-        eprintln!("lspci failed");
-        return;
-    }
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    println!("GPUs:");
-    for line in stdout.lines() {
-        if let Some(start) = line.rfind('[') {
-            if let Some(end) = line[start + 1..].find(']') {
-                let id_str = &line[start + 1..start + 1 + end];
-                let parts: Vec<&str> = id_str.split(":").collect();
-                let vendor = lookup_vendor(parts[0]);
-                let (gpu_name, vram) = lookup_device(parts[1]);
+fn get_fresh_auth_token(
+    refresh_token: &str,
+    auth0_client_id: &str,
+    auth0_client_domain: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let client = reqwest::blocking::Client::new();
+    let final_endpoint = String::from("https://") + auth0_client_domain + "/oauth/token";
 
-                if let Some(v) = vendor {
-                    println!(
-                        "--- Vendor = {}, Model = {} with {} GB of VRAM",
-                        v, gpu_name, vram
-                    );
-                    node_hardware.gpu_vendor = v.to_owned();
-                    node_hardware.gpu_type = gpu_name.to_owned();
-                    node_hardware.gpu_memory = vram as u64;
-                    node_hardware.gpu_count += 1;
-                }
+    let token_refresh_rq = RefresTokenRequest {
+        grant_type: String::from("refresh_token"),
+        client_id: auth0_client_id.to_string(),
+        refresh_token: refresh_token.to_string(),
+        scope: String::from("openid offline_access nodeagent")
+    };
+
+    let resp = client.post(final_endpoint).json(&token_refresh_rq).send();
+
+    match resp {
+        Ok(resp) => {
+            if resp.status().is_success() {
+                let parsed = resp.json::<RefreshTokenResponse>()?;
+                Ok(parsed.access_token)
+            } else {
+                let status_code = resp.status();
+                let body = resp
+                    .text()
+                    .unwrap_or_else(|_| "Unable to read body".to_string());
+                Err(format!("Request failed with status {}: {}", status_code, body).into())
             }
         }
-    }
-
-    send_heartbeat(&node_id, &api_endpoint, &auth_tkn, &node_hardware);
-}
-
-fn bytes_to_gb(bytes: u64) -> u64 {
-    bytes / (1000 * 1000 * 1000)
-}
-
-fn bytes_to_gib(bytes: u64) -> u64 {
-    bytes / (1024 * 1024 * 1024)
-}
-
-fn lookup_vendor(vendor_id: &str) -> Option<&str> {
-    match vendor_id {
-        "10de" => Some("NVIDIA"),
-        "1002" => Some("AMD"),
-        _ => None,
-    }
-}
-
-fn lookup_device(device_id: &str) -> (&str, u16) {
-    match device_id {
-        "27b8" => ("L4", 24),
-        "26b5" => ("L40", 48),
-        "26b9" => ("L40S", 48),
-        "20b0" => ("A100", 40),
-        "20b1" => ("A100", 40),
-        "20b2" => ("A100", 80),
-        "20b3" => ("A100", 80),
-        "740f" => ("MI210", 64),
-        _ => ("unknown device", 0),
+        Err(e) => Err(e.into()),
     }
 }
 
@@ -173,7 +151,9 @@ fn ensure_config_file(
     path: &PathBuf,
     node_id: Option<&str>,
     api_url: Option<&str>,
-    auth_token: Option<&str>,
+    refresh_token: Option<&str>,
+    auth0_client_id: Option<&str>,
+    auth0_client_domain: Option<&str>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if !path.exists() {
         let mut opts = OpenOptions::new();
@@ -184,32 +164,41 @@ fn ensure_config_file(
             opts.mode(0o600);
         }
 
-        if node_id.is_none() | api_url.is_none() | auth_token.is_none() {
+        if node_id.is_none() | api_url.is_none() | refresh_token.is_none() | auth0_client_id.is_none() | auth0_client_domain.is_none() {
             return Err(
-                "node_id, api_url and auth_token must be given if no environment exist".into(),
+                "node_id, api_url and auth_token, auth0_client_id, and auth0_client_domain must be given if no environment exist".into(),
             );
         }
 
         let mut f = opts.open(path)?;
         writeln!(f, "NODE_ID={}", node_id.unwrap())?;
         writeln!(f, "API_URL={}", api_url.unwrap())?;
-        writeln!(f, "AUTH_TOKEN={}", auth_token.unwrap().trim())?;
+        writeln!(f, "AUTH_TOKEN={}", refresh_token.unwrap().trim())?;
+        writeln!(
+            f,
+            "AUTH0_CLIENT_DOMAIN={}",
+            auth0_client_domain.unwrap().trim()
+        )?;
+        writeln!(f, "AUTH0_CLIENT_ID={}", auth0_client_id.unwrap().trim())?;
     }
     Ok(())
 }
 
-
-fn lookup_auth_token(
+fn lookup_configuration(
     node_id: Option<String>,
     api_url: Option<String>,
     auth_token: Option<String>,
-) -> Result<(String, String, String), Box<dyn std::error::Error>> {
+    auth0_client_id: Option<String>,
+    auth0_client_domain: Option<String>,
+) -> Result<(String, String, String, String, String), Box<dyn std::error::Error>> {
     let cfg = config_file_path()?;
     ensure_config_file(
         &cfg,
         node_id.as_deref(),
         api_url.as_deref(),
         auth_token.as_deref(),
+        auth0_client_id.as_deref(),
+        auth0_client_domain.as_deref(),
     )?;
 
     from_path(&cfg)?;
@@ -217,21 +206,37 @@ fn lookup_auth_token(
     let api_url = env::var("API_URL")?;
     let auth_token = env::var("AUTH_TOKEN")?;
     let node_id = env::var("NODE_ID")?;
+    let auth0_client_id = env::var("AUTH0_CLIENT_ID")?;
+    let auth0_client_domain = env::var("AUTH0_CLIENT_DOMAIN")?;
 
     if api_url.is_empty() || auth_token.is_empty() {
         return Err("API_URL or AUTH_TOKEN is empty".into());
     }
 
-    Ok((node_id, api_url, auth_token))
+    Ok((
+        node_id,
+        api_url,
+        auth_token,
+        auth0_client_id,
+        auth0_client_domain,
+    ))
 }
 
+
+
 #[derive(Serialize, Debug)]
-struct NodeHardware {
-    gpu_count: u8,
-    gpu_vendor: String,
-    gpu_type: String,
-    gpu_memory: u64,
-    cpu_cores: u64,
-    memory_gb: u64,
-    storage_gb: u64,
+struct RefresTokenRequest {
+    grant_type: String,
+    client_id: String,
+    refresh_token: String,
+    scope: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct RefreshTokenResponse {
+    access_token: String,
+    id_token: String,
+    scope: String,
+    token_type: String,
+    expires_in: u64,
 }
