@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/exalsius/client-hw-info/compare/v1.0.0...v1.0.1) (2025-09-18)
+
+
+### Bug Fixes
+
+* remove the version name for now to build binary ([828c726](https://github.com/exalsius/client-hw-info/commit/828c7260fc7462ca24dcbf01678b61c769782952))
+
 ## 1.0.0 (2025-09-18)
 
 
