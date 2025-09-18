@@ -1,0 +1,17 @@
+# Changelog
+
+## 1.0.0 (2025-09-18)
+
+
+### Features
+
+* add basic release-please workflow ([39109f6](https://github.com/exalsius/client-hw-info/commit/39109f613e44718adbf6e9944098319b1620e9ff))
+* add heartbeat API patch call ([e13acb8](https://github.com/exalsius/client-hw-info/commit/e13acb80145f750afad388bd84d934ca940718f8))
+* dynamically create env with given parameters ([14e2807](https://github.com/exalsius/client-hw-info/commit/14e28070304ad990729d66c44e1dd96867134842))
+* initial version for client hardware info tool ([6b63432](https://github.com/exalsius/client-hw-info/commit/6b634324d19350bf3a3a46b0f478234a8e78ab58))
+* static musl build for Linux x64 when running cargo --release ([c398d92](https://github.com/exalsius/client-hw-info/commit/c398d92490c75d054205af30ca8aec4632508603))
+
+
+### Bug Fixes
+
+* add musl install to ci ([9754d83](https://github.com/exalsius/client-hw-info/commit/9754d830f3ca4769de55136794cfef2d7346bfc3))
