@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/exalsius/client-hw-info/compare/v1.2.1...v1.3.0) (2025-09-19)
+
+
+### Features
+
+* implement logging and refactored code ([a0ea24e](https://github.com/exalsius/client-hw-info/commit/a0ea24e39ec9887efad20088c7eaecff149772ae))
+* implement logging and refactored code ([a0ea24e](https://github.com/exalsius/client-hw-info/commit/a0ea24e39ec9887efad20088c7eaecff149772ae))
+
 ## [1.2.1](https://github.com/exalsius/client-hw-info/compare/v1.2.0...v1.2.1) (2025-09-19)
 
 
