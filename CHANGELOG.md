@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/exalsius/client-hw-info/compare/v1.2.0...v1.2.1) (2025-09-19)
+
+
+### Bug Fixes
+
+* change unknown to UNKNOWN to comply with API reference ([c3a26e8](https://github.com/exalsius/client-hw-info/commit/c3a26e8966210615cee7b4c23a1779c59d61269e))
+
 ## [1.2.0](https://github.com/exalsius/client-hw-info/compare/v1.1.1...v1.2.0) (2025-09-18)
 
 
