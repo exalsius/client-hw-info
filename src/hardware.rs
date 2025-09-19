@@ -10,8 +10,8 @@ pub fn collect_client_hardware() -> Result<NodeHardware, Box<dyn std::error::Err
 
     let mut node_hardware = NodeHardware {
         gpu_count: 0,
-        gpu_vendor: String::from("unknown"),
-        gpu_type: String::from("unknown"),
+        gpu_vendor: String::from("UNKNOWN"),
+        gpu_type: String::from("UNKNOWN"),
         gpu_memory: 0,
         cpu_cores: 0,
         memory_gb: 0,
