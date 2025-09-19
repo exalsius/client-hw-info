@@ -1,10 +1,12 @@
 use std::io::Error;
 use std::path::Path;
 use std::process::Command;
+use log::{error, info};
 use serde::Serialize;
 use sysinfo::{Disks, System};
 
 pub fn collect_client_hardware() -> Result<NodeHardware, Box<dyn std::error::Error>> {
+    info!("Start collecting hardware information");
     let mut sys = System::new_all();
     sys.refresh_all();
 
@@ -17,23 +19,26 @@ pub fn collect_client_hardware() -> Result<NodeHardware, Box<dyn std::error::Err
         memory_gb: 0,
         storage_gb: 0,
     };
-
-    println!("Total memory: {} GiB", bytes_to_gib(sys.total_memory()));
     node_hardware.memory_gb = bytes_to_gib(sys.total_memory());
-    println!("Total number of CPU threads: {}", sys.cpus().len());
+    info!("Total memory: {} GiB", node_hardware.memory_gb);
+
     node_hardware.cpu_cores = sys.cpus().len() as u64;
+    info!("Total number of CPU cores: {}", node_hardware.cpu_cores);
+
+
 
     let disks = Disks::new_with_refreshed_list();
     if let Some(disk) = disks
         .iter()
         .find(|disk| disk.mount_point() == Path::new("/"))
     {
-        println!(
+        node_hardware.storage_gb = bytes_to_gb(disk.total_space());
+        info!(
             "Root disk with filesystem {} and {} GB storage",
             disk.file_system().to_string_lossy(),
-            bytes_to_gb(disk.total_space())
+            node_hardware.storage_gb
         );
-        node_hardware.storage_gb = bytes_to_gb(disk.total_space());
+
     }
 
     let output = Command::new("sh")
@@ -43,13 +48,13 @@ pub fn collect_client_hardware() -> Result<NodeHardware, Box<dyn std::error::Err
         .expect("Exception running lspci");
 
     if !output.status.success() {
-        eprintln!("lspci failed");
+        error!("Calling lspci failed. Please check if it is installed");
         return Err("lspci failed".into());
 
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    println!("GPUs:");
+    info!("List GPUs:");
     for line in stdout.lines() {
         if let Some(start) = line.rfind('[') {
             if let Some(end) = line[start + 1..].find(']') {
@@ -59,7 +64,7 @@ pub fn collect_client_hardware() -> Result<NodeHardware, Box<dyn std::error::Err
                 let (gpu_name, vram) = lookup_device(parts[1]);
 
                 if let Some(v) = vendor {
-                    println!(
+                    info!(
                         "--- Vendor = {}, Model = {} with {} GB of VRAM",
                         v, gpu_name, vram
                     );
@@ -72,6 +77,7 @@ pub fn collect_client_hardware() -> Result<NodeHardware, Box<dyn std::error::Err
             }
         }
     }
+    info!("Finished collecting hardware information");
     Ok(node_hardware)
 }
 
