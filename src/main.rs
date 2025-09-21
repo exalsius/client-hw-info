@@ -31,6 +31,10 @@ struct CliArguments {
     /// the auth0 client domain.
     #[argh(option)]
     auth0_client_domain: Option<String>,
+
+    /// you can skip the heartbeat sending to only run the hardware identification.
+    #[argh(option)]
+    skip_heartbeat: Option<bool>
 }
 
 fn main() {
@@ -38,6 +42,20 @@ fn main() {
     info!("Starting client hardware info tool");
 
     let cli_arguments: CliArguments = argh::from_env();
+
+    let node_hardware = match hardware::collect_client_hardware() {
+        Ok(node_hardware) => node_hardware,
+        Err(e) => {
+            error!("Error: {}", e);
+            return;
+        }
+    };
+
+    if cli_arguments.skip_heartbeat.unwrap_or(false) {
+        info!("Hardware collected (heartbeat skipped by flag)");
+        return;
+    }
+
 
     let (node_id, api_endpoint, refresh_tkn, auth0_client_id, auth_client_domain) =
         match config::lookup_configuration(
@@ -68,14 +86,6 @@ fn main() {
                 return;
             }
         };
-
-    let node_hardware = match hardware::collect_client_hardware() {
-        Ok(node_hardware) => node_hardware,
-        Err(e) => {
-            error!("Error: {}", e);
-            return;
-        }
-    };
 
     heartbeat::send_heartbeat(&node_id, &api_endpoint, &auth_token, &node_hardware);
     info!("Finished client hardware info tool");
