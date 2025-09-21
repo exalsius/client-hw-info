@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/exalsius/client-hw-info/compare/v1.3.0...v1.4.0) (2025-09-21)
+
+
+### Features
+
+* it allows skipping the heartbeat to only collect hardware information ([9c3b846](https://github.com/exalsius/client-hw-info/commit/9c3b846e3393bcd313e3c7a0ece4b85005bcedd8))
+
 ## [1.3.0](https://github.com/exalsius/client-hw-info/compare/v1.2.1...v1.3.0) (2025-09-19)
 
 
