@@ -10,8 +10,10 @@ Provides information about a node's hardware.
 
 Simply execute ``./target/release/hwinfo`` if you built it or excute the binary in the release folder if you downloaded a release.
 
-There are 3 arguments that need to be passed in order to send a periodical heartbeart to the server:
+There are 3 arguments that need to be passed *initially* when first running the application in order to send a periodical heartbeart to the server:
 
 `--api-url <url>`  Defines the base URL, e.g. https://api.exalsius.ai  
-`--auth_token <token>` The refresh token.
+`--auth_token <token>` The auth token  
 `--node-id <id>`  The node id defined during initial connection
+
+The tool automatically creates a configuration file from which the values are fetched.
