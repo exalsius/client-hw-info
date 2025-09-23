@@ -1,4 +1,4 @@
-mod auth;
+
 mod config;
 mod hardware;
 mod heartbeat;
@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 struct CliArguments {
     /// the refresh token for acquiring the access token.
     #[argh(option)]
-    refresh_token: Option<String>,
+    auth_token: Option<String>,
 
     /// the server API endpoint.
     #[argh(option)]
@@ -24,17 +24,9 @@ struct CliArguments {
     #[argh(option)]
     node_id: Option<String>,
 
-    /// the auth0 client id.
-    #[argh(option)]
-    auth0_client_id: Option<String>,
-
-    /// the auth0 client domain.
-    #[argh(option)]
-    auth0_client_domain: Option<String>,
-
     /// you can skip the heartbeat sending to only run the hardware identification.
     #[argh(option)]
-    skip_heartbeat: Option<bool>
+    skip_heartbeat: Option<bool>,
 }
 
 fn main() {
@@ -56,37 +48,28 @@ fn main() {
         return;
     }
 
+    let (node_id, api_endpoint, auth_tkn) = match config::lookup_configuration(
+        cli_arguments.node_id,
+        cli_arguments.api_url,
+        cli_arguments.auth_token,
+    ) {
+        Ok((node_id, api_url, auth_token)) => (node_id, api_url, auth_token),
+        Err(e) => {
+            error!("Error: {}", e);
+            return;
+        }
+    };
 
-    let (node_id, api_endpoint, refresh_tkn, auth0_client_id, auth_client_domain) =
-        match config::lookup_configuration(
-            cli_arguments.node_id,
-            cli_arguments.api_url,
-            cli_arguments.refresh_token,
-            cli_arguments.auth0_client_id,
-            cli_arguments.auth0_client_domain,
-        ) {
-            Ok((node_id, api_url, auth_token, auth0_client_id, auth0_client_domain)) => (
-                node_id,
-                api_url,
-                auth_token,
-                auth0_client_id,
-                auth0_client_domain,
-            ),
-            Err(e) => {
-                error!("Error: {}", e);
-                return;
-            }
-        };
+    let new_auth_tkn = match heartbeat::send_heartbeat(&node_id, &api_endpoint, &auth_tkn, &node_hardware) {
+        Ok(new_auth_tkn) => new_auth_tkn,
+        Err(e) => {
+            error!("Error: {}", e);
+            return;
+        }
+    };
 
-    let auth_token =
-        match auth::get_fresh_auth_token(&refresh_tkn, &auth0_client_id, &auth_client_domain) {
-            Ok(token) => token,
-            Err(e) => {
-                error!("Auth token refresh failed: {e:#}");
-                return;
-            }
-        };
+    config::write_new_auth_token(&new_auth_tkn).expect("Failed writing new auth token to config file");
 
-    heartbeat::send_heartbeat(&node_id, &api_endpoint, &auth_token, &node_hardware);
     info!("Finished client hardware info tool");
 }
+
