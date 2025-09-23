@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.1.0](https://github.com/exalsius/client-hw-info/compare/v2.0.1...v2.1.0) (2025-09-23)
+
+
+### Features
+
+* the GPU detection does not rely on lspci anymore but reads out pci directly in the file system ([84f1d49](https://github.com/exalsius/client-hw-info/commit/84f1d49f632576524eb30ac9eb46f047bea02eeb))
+
+
+### Bug Fixes
+
+* remove lspci command ([712b144](https://github.com/exalsius/client-hw-info/commit/712b144300bf5adc8bc1533a0ff975b411b40838))
+
 ## [2.0.1](https://github.com/exalsius/client-hw-info/compare/v2.0.0...v2.0.1) (2025-09-23)
 
 
