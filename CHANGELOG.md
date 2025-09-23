@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/exalsius/client-hw-info/compare/v1.4.0...v1.5.0) (2025-09-23)
+
+
+### Features
+
+* add tests for multiple distros ([aeb753b](https://github.com/exalsius/client-hw-info/commit/aeb753b4c49712105d3bdd5b3426d6c9d5a21bc1))
+
 ## [1.4.0](https://github.com/exalsius/client-hw-info/compare/v1.3.0...v1.4.0) (2025-09-21)
 
 
