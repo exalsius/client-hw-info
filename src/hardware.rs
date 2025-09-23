@@ -1,4 +1,6 @@
+use std::fs;
 use std::io::Error;
+use std::os::unix::io;
 use std::path::Path;
 use std::process::Command;
 use log::{error, info};
@@ -26,7 +28,6 @@ pub fn collect_client_hardware() -> Result<NodeHardware, Box<dyn std::error::Err
     info!("Total number of CPU cores: {}", node_hardware.cpu_cores);
 
 
-
     let disks = Disks::new_with_refreshed_list();
     if let Some(disk) = disks
         .iter()
@@ -38,7 +39,6 @@ pub fn collect_client_hardware() -> Result<NodeHardware, Box<dyn std::error::Err
             disk.file_system().to_string_lossy(),
             node_hardware.storage_gb
         );
-
     }
 
     let output = Command::new("sh")
@@ -50,35 +50,79 @@ pub fn collect_client_hardware() -> Result<NodeHardware, Box<dyn std::error::Err
     if !output.status.success() {
         error!("Calling lspci failed. Please check if it is installed");
         return Err("lspci failed".into());
-
     }
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    info!("List GPUs:");
-    for line in stdout.lines() {
-        if let Some(start) = line.rfind('[') {
-            if let Some(end) = line[start + 1..].find(']') {
-                let id_str = &line[start + 1..start + 1 + end];
-                let parts: Vec<&str> = id_str.split(":").collect();
-                let vendor = lookup_vendor(parts[0]);
-                let (gpu_name, vram) = lookup_device(parts[1]);
 
-                if let Some(v) = vendor {
-                    info!(
-                        "--- Vendor = {}, Model = {} with {} GB of VRAM",
-                        v, gpu_name, vram
-                    );
-                    node_hardware.gpu_vendor = v.to_owned();
-                    node_hardware.gpu_type = gpu_name.to_owned();
-                    node_hardware.gpu_memory = vram as u64;
-                    node_hardware.gpu_count += 1;
 
-                }
-            }
+
+    let gpus = match list_pci_gpus() {
+        Ok(gpus) => gpus,
+        Err(e) => {
+            return Err(e.into());
         }
+    };
+
+    if !gpus.is_empty() {
+        node_hardware.gpu_count = gpus.len() as u8;
+        node_hardware.gpu_vendor = gpus[0].vendor.to_owned();
+        node_hardware.gpu_type = gpus[0].gpu_type.to_owned();
+        node_hardware.gpu_memory = gpus[0].vram;
     }
+
+    info!("List GPUs:");
+    for (idx, gpu) in gpus.iter().enumerate() {
+        info!("GPU {idx}: {} {} {} GB", gpu.vendor, gpu.gpu_type, gpu.vram);
+    }
+
+
     info!("Finished collecting hardware information");
     Ok(node_hardware)
+}
+
+fn list_pci_gpus() -> Result<Vec<GPU>, Error> {
+    let mut all_gpus = Vec::new();
+
+    for entry in fs::read_dir("/sys/bus/pci/devices/")? {
+        let pci_entry = entry?;
+        let vendor_id = pci_entry.path().join("vendor");
+        let device_id = pci_entry.path().join("device");
+        let class_code = pci_entry.path().join("class");
+
+        let vendor = fs::read_to_string(&vendor_id).map_err(|e| {
+            error!("Failed reading the GPU vendor {e}"); e
+        }) ?.trim().to_string();
+        let device = fs::read_to_string(&device_id).map_err(|e| {
+            error!("Failed reading the GPU device {e}"); e
+        }) ?.trim().to_string();
+        let class = fs::read_to_string(&class_code).map_err(|e| {
+            error!("Failed reading the GPU class {e}"); e
+        }) ?.trim().to_string();
+
+        if !class.starts_with("0x03") {
+            continue;
+        }
+
+        let vendor = lookup_vendor(&vendor);
+        let (gpu_name, vram) = lookup_device(&device).unwrap_or(("UNKNOWN", 0));
+
+        if vendor.unwrap_or("UNKNOWN") != "UNKNOWN" {
+            all_gpus.push(GPU {
+                vendor: vendor.unwrap().to_owned(),
+                gpu_type: gpu_name.to_owned(),
+                vram: vram as u64,
+            })
+        }
+
+
+    }
+
+    Ok(all_gpus)
+}
+
+struct GPU {
+    vendor: String,
+    gpu_type: String,
+    vram: u64,
 }
 
 #[derive(Serialize, Debug)]
@@ -102,22 +146,23 @@ fn bytes_to_gib(bytes: u64) -> u64 {
 
 fn lookup_vendor(vendor_id: &str) -> Option<&str> {
     match vendor_id {
-        "10de" => Some("NVIDIA"),
-        "1002" => Some("AMD"),
+        "0x10de" => Some("NVIDIA"),
+        "0x1002" => Some("AMD"),
+        "0x8086" => Some("Intel"),
         _ => None,
     }
 }
 
-fn lookup_device(device_id: &str) -> (&str, u16) {
+fn lookup_device(device_id: &str) -> Option<(&str, u16)> {
     match device_id {
-        "27b8" => ("L4", 24),
-        "26b5" => ("L40", 48),
-        "26b9" => ("L40S", 48),
-        "20b0" => ("A100", 40),
-        "20b1" => ("A100", 40),
-        "20b2" => ("A100", 80),
-        "20b3" => ("A100", 80),
-        "740f" => ("MI210", 64),
-        _ => ("unknown device", 0),
+        "0x27b8" => Some(("L4", 24)),
+        "0x26b5" => Some(("L40", 48)),
+        "0x26b9" => Some(("L40S", 48)),
+        "0x20b0" => Some(("A100", 40)),
+        "0x20b1" => Some(("A100", 40)),
+        "0x20b2" => Some(("A100", 80)),
+        "0x20b3" => Some(("A100", 80)),
+        "0x740f" => Some(("MI210", 64)),
+        _ => None,
     }
 }
