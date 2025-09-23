@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/exalsius/client-hw-info/compare/v1.5.0...v2.0.0) (2025-09-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* change the way of communication with the API
+
+### Features
+
+* change the way of communication with the API ([1fad302](https://github.com/exalsius/client-hw-info/commit/1fad302bd1bfb0d0caf8910788fd04026ca03819))
+
 ## [1.5.0](https://github.com/exalsius/client-hw-info/compare/v1.4.0...v1.5.0) (2025-09-23)
 
 
