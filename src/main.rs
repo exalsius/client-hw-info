@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 struct CliArguments {
     /// the refresh token for acquiring the access token.
     #[argh(option)]
-    auth_token: Option<String>,
+    access_token: Option<String>,
 
     /// the server API endpoint.
     #[argh(option)]
@@ -51,7 +51,7 @@ fn main() {
     let (node_id, api_endpoint, auth_tkn) = match config::lookup_configuration(
         cli_arguments.node_id,
         cli_arguments.api_url,
-        cli_arguments.auth_token,
+        cli_arguments.access_token,
     ) {
         Ok((node_id, api_url, auth_token)) => (node_id, api_url, auth_token),
         Err(e) => {
