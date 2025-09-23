@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/exalsius/client-hw-info/compare/v2.0.0...v2.0.1) (2025-09-23)
+
+
+### Bug Fixes
+
+* change auth to access ([10777d8](https://github.com/exalsius/client-hw-info/commit/10777d8b061b7672a80c0b7aebaa07f681b1f990))
+
 ## [2.0.0](https://github.com/exalsius/client-hw-info/compare/v1.5.0...v2.0.0) (2025-09-23)
 
 
