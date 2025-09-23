@@ -1,10 +1,9 @@
+use log::{error, info};
+use serde::Serialize;
 use std::fs;
 use std::io::Error;
 use std::os::unix::io;
 use std::path::Path;
-use std::process::Command;
-use log::{error, info};
-use serde::Serialize;
 use sysinfo::{Disks, System};
 
 pub fn collect_client_hardware() -> Result<NodeHardware, Box<dyn std::error::Error>> {
@@ -40,19 +39,6 @@ pub fn collect_client_hardware() -> Result<NodeHardware, Box<dyn std::error::Err
             node_hardware.storage_gb
         );
     }
-
-    let output = Command::new("sh")
-        .arg("-c")
-        .arg(r#"lspci -nn | egrep -i 'vga|3d|display'"#)
-        .output()
-        .expect("Exception running lspci");
-
-    if !output.status.success() {
-        error!("Calling lspci failed. Please check if it is installed");
-        return Err("lspci failed".into());
-    }
-
-
 
 
     let gpus = match list_pci_gpus() {

@@ -5,9 +5,7 @@ mod heartbeat;
 
 use argh::FromArgs;
 use env_logger::{Builder, Env};
-use hardware::NodeHardware;
-use log::{error, info, warn};
-use serde::{Deserialize, Serialize};
+use log::{error, info};
 
 #[derive(FromArgs)]
 ///   Parameters for the client hardware info tool.
