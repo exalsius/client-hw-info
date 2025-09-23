@@ -19,11 +19,58 @@ jobs:
       - name: Install musl-tools
         run: sudo apt-get update && sudo apt-get install -y musl-tools
 
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+            | sh -s -- -y --profile minimal --default-toolchain stable
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
       - name: Install musl target
         run: rustup target add x86_64-unknown-linux-musl
 
       - name: Build
-        run: cargo build --verbose
+        run: cargo build --release
 
       - name: Run tests
         run: cargo test --verbose
+
+      - name: Upload client-hw-info binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-hw-info-artifact
+          path: target/x86_64-unknown-linux-musl/release/client-hw-info
+
+  smoke:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        base:
+          - ubuntu:24.04
+          - ubuntu:22.04
+          - ubuntu:20.04
+          - debian:12
+          - debian:13
+          - almalinux:10
+          - almalinux:9
+          - rockylinux:9
+
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: client-hw-info-artifact
+      - name: Make binary executable
+        run: chmod +x client-hw-info
+      - name: Run smoke on ${{ matrix.base }}
+        run: |
+          docker run --rm \
+            -v "$PWD/client-hw-info:/client-hw-info" \
+            -w / \
+            "${{ matrix.base }}" \
+            ./client-hw-info --skip-heartbeat true
+      
+        
+
