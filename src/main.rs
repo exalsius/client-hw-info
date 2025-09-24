@@ -45,7 +45,7 @@ fn main() {
         info!("Hardware collected (heartbeat skipped by flag)");
         return;
     }
-
+    error!("THIS IS only for testing purposes.");
     let (node_id, api_endpoint, auth_tkn) = match config::lookup_configuration(
         cli_arguments.node_id,
         cli_arguments.api_url,
