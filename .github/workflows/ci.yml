@@ -66,14 +66,19 @@ jobs:
         run: chmod +x client-hw-info
       - name: Run smoke on ${{ matrix.base }}
         run: |
+          set -o pipefail
           if docker run --rm \
-            -v "$PWD/client-hw-info:/client-hw-info" \
-            -w / \
-            "${{ matrix.base }}" \
-            ./client-hw-info --skip-heartbeat 2>&1 1>/dev/null | grep -q "ERROR"; then
-          echo 
-          exit 1   
+                -v "$PWD/client-hw-info:/client-hw-info" \
+                -w / \
+                "${{ matrix.base }}" \
+                ./client-hw-info --skip-heartbeat 2>&1 1>/dev/null \
+             | tee /dev/stderr \
+             | grep -q "ERROR"
+          then
+            echo "stderr enthält 'ERROR' → Build fail" >&2
+            exit 1
           fi
+        
       
         
 
