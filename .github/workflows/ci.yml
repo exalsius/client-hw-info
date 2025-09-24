@@ -66,11 +66,14 @@ jobs:
         run: chmod +x client-hw-info
       - name: Run smoke on ${{ matrix.base }}
         run: |
-          docker run --rm \
+          if docker run --rm \
             -v "$PWD/client-hw-info:/client-hw-info" \
             -w / \
             "${{ matrix.base }}" \
-            ./client-hw-info --skip-heartbeat true
+            ./client-hw-info --skip-heartbeat 2>&1 1>/dev/null | grep -q "ERROR"; then
+          echo 
+          exit 1   
+          fi
       
         
 

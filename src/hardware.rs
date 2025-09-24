@@ -2,7 +2,6 @@ use log::{error, info};
 use serde::Serialize;
 use std::fs;
 use std::io::Error;
-use std::os::unix::io;
 use std::path::Path;
 use sysinfo::{Disks, System};
 

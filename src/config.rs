@@ -4,7 +4,7 @@ use std::fs::OpenOptions;
 use std::io::Write;
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::PathBuf;
-use std::{env, fs, io};
+use std::{env, fs};
 
 fn config_file_path() -> Result<PathBuf, Box<dyn std::error::Error>> {
     let home = dirs::home_dir().ok_or("HOME not set")?;
@@ -109,11 +109,9 @@ pub fn write_new_auth_token(new_auth_token: &String) -> Result<(), Box<dyn std::
     let cfg_contents = fs::read_to_string(&cfg_path)?;
 
     let mut new_lines = Vec::new();
-    let mut replaced = false;
     for line in cfg_contents.lines() {
         if line.starts_with("AUTH_TOKEN=") {
             new_lines.push(format!("AUTH_TOKEN={}", new_auth_token));
-            replaced = true;
         } else {
             new_lines.push(line.to_string());
         }
