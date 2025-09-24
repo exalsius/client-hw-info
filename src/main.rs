@@ -23,8 +23,8 @@ struct CliArguments {
     node_id: Option<String>,
 
     /// you can skip the heartbeat sending to only run the hardware identification.
-    #[argh(option)]
-    skip_heartbeat: Option<bool>,
+    #[argh(switch)]
+    skip_heartbeat: bool,
 }
 
 fn main() {
@@ -41,7 +41,7 @@ fn main() {
         }
     };
 
-    if cli_arguments.skip_heartbeat.unwrap_or(false) {
+    if cli_arguments.skip_heartbeat {
         info!("Hardware collected (heartbeat skipped by flag)");
         return;
     }
