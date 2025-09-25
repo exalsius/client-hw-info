@@ -1,6 +1,6 @@
 use log::{error, info};
 use serde::Serialize;
-use std::fs;
+use std::{fs, io};
 use std::io::Error;
 use std::path::Path;
 use sysinfo::{Disks, System};
@@ -25,7 +25,6 @@ pub fn collect_client_hardware() -> Result<NodeHardware, Box<dyn std::error::Err
     node_hardware.cpu_cores = sys.cpus().len() as u64;
     info!("Total number of CPU cores: {}", node_hardware.cpu_cores);
 
-
     let disks = Disks::new_with_refreshed_list();
     if let Some(disk) = disks
         .iter()
@@ -38,6 +37,13 @@ pub fn collect_client_hardware() -> Result<NodeHardware, Box<dyn std::error::Err
             node_hardware.storage_gb
         );
     }
+
+
+    let ethernet_connections = list_ethernet_connections().unwrap();
+
+    for (idx, ethernet_connection) in ethernet_connections.iter().enumerate() {
+        info!("Ethernet connection {} with name {} and speed of {} Mbps", idx, ethernet_connection.0, ethernet_connection.1);
+    };
 
 
     let gpus = match list_pci_gpus() {
@@ -59,10 +65,35 @@ pub fn collect_client_hardware() -> Result<NodeHardware, Box<dyn std::error::Err
         info!("GPU {idx}: {} {} {} GB", gpu.vendor, gpu.gpu_type, gpu.vram);
     }
 
-
     info!("Finished collecting hardware information");
     Ok(node_hardware)
 }
+
+
+fn list_ethernet_connections() -> io::Result<Vec<(String, i32)>> {
+    let items = fs::read_dir("/sys/class/net")?
+        .filter_map(|entry| {
+            let entry = entry.ok()?; // DirEntry oder skip
+            let name = entry.file_name().into_string().ok()?;
+            if !name.contains("en") { return None; }
+
+            let ty = fs::read_to_string(entry.path().join("type")).ok()?
+                .trim().parse::<i32>().ok()?;
+            if ty != 1 { return None; }
+
+
+            let speed = fs::read_to_string(entry.path().join("speed"))
+                .ok()
+                .and_then(|s| s.trim().parse::<i32>().ok())
+                .unwrap_or(-1);
+
+            Some((name, speed))
+        })
+        .collect::<Vec<(String, i32)>>(); // <— wichtig
+
+    Ok(items)
+}
+
 
 fn list_pci_gpus() -> Result<Vec<GPU>, Error> {
     let mut all_gpus = Vec::new();
@@ -73,15 +104,27 @@ fn list_pci_gpus() -> Result<Vec<GPU>, Error> {
         let device_id = pci_entry.path().join("device");
         let class_code = pci_entry.path().join("class");
 
-        let vendor = fs::read_to_string(&vendor_id).map_err(|e| {
-            error!("Failed reading the GPU vendor {e}"); e
-        }) ?.trim().to_string();
-        let device = fs::read_to_string(&device_id).map_err(|e| {
-            error!("Failed reading the GPU device {e}"); e
-        }) ?.trim().to_string();
-        let class = fs::read_to_string(&class_code).map_err(|e| {
-            error!("Failed reading the GPU class {e}"); e
-        }) ?.trim().to_string();
+        let vendor = fs::read_to_string(&vendor_id)
+            .map_err(|e| {
+                error!("Failed reading the GPU vendor {e}");
+                e
+            })?
+            .trim()
+            .to_string();
+        let device = fs::read_to_string(&device_id)
+            .map_err(|e| {
+                error!("Failed reading the GPU device {e}");
+                e
+            })?
+            .trim()
+            .to_string();
+        let class = fs::read_to_string(&class_code)
+            .map_err(|e| {
+                error!("Failed reading the GPU class {e}");
+                e
+            })?
+            .trim()
+            .to_string();
 
         if !class.starts_with("0x03") {
             continue;
@@ -97,8 +140,6 @@ fn list_pci_gpus() -> Result<Vec<GPU>, Error> {
                 vram: vram as u64,
             })
         }
-
-
     }
 
     Ok(all_gpus)
