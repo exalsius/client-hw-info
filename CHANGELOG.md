@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0](https://github.com/exalsius/client-hw-info/compare/v2.1.0...v2.2.0) (2025-09-25)
+
+
+### Features
+
+* add network detection ([65f32f7](https://github.com/exalsius/client-hw-info/commit/65f32f7c6b19d029aaddb11971abb06bcabbe610))
+
 ## [2.1.0](https://github.com/exalsius/client-hw-info/compare/v2.0.1...v2.1.0) (2025-09-23)
 
 
