@@ -1,0 +1,22 @@
+[amd]
+# CDNA1
+"0x738c" = 32    # Instinct MI100
+"0x738e" = 32    # Instinct MI100 (OEM/ES)
+
+# CDNA2 (Aldebaran)
+"0x740f" = 64    # Instinct MI210
+"0x7408" = 128   # Instinct MI250X
+"0x740c" = 128   # Instinct MI250 / MI250X
+
+# CDNA3 (Aqua Vanjaram)
+"0x74a0" = 128   # Instinct MI300A
+"0x74a1" = 192   # Instinct MI300X
+"0x74a9" = 192   # Instinct MI300X HF
+"0x74b5" = 192   # Instinct MI300X VF
+"0x74bd" = 192   # Instinct MI300X HF (B-Stepping)
+"0x74a5" = 256   # Instinct MI325X
+"0x74b9" = 256   # Instinct MI325X VF
+
+# CDNA3.5 (Sonora Pass)
+"0x75a0" = 288   # Instinct MI350X
+"0x75a3" = 288   # Instinct MI355X
