@@ -7,6 +7,7 @@ use argh::FromArgs;
 use env_logger::{Builder, Env};
 use log::{error, info};
 
+
 #[derive(FromArgs)]
 ///   Parameters for the client hardware info tool.
 struct CliArguments {

@@ -1,9 +1,14 @@
 use log::{error, info};
-use serde::Serialize;
-use std::{fs, io};
-use std::io::Error;
+use pciid_parser::Database;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::error::Error;
 use std::path::Path;
+use std::{fs, io};
 use sysinfo::{Disks, System};
+
+const GPU_VRAM_TOML: &str =
+    include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/gpu_vram.toml"));
 
 pub fn collect_client_hardware() -> Result<NodeHardware, Box<dyn std::error::Error>> {
     info!("Start collecting hardware information");
@@ -38,13 +43,14 @@ pub fn collect_client_hardware() -> Result<NodeHardware, Box<dyn std::error::Err
         );
     }
 
-
     let ethernet_connections = list_ethernet_connections().unwrap();
 
     for (idx, ethernet_connection) in ethernet_connections.iter().enumerate() {
-        info!("Ethernet connection {} with name {} and speed of {} Mbps", idx, ethernet_connection.0, ethernet_connection.1);
-    };
-
+        info!(
+            "Ethernet connection {} with name {} and speed of {} Mbps",
+            idx, ethernet_connection.0, ethernet_connection.1
+        );
+    }
 
     let gpus = match list_pci_gpus() {
         Ok(gpus) => gpus,
@@ -69,18 +75,23 @@ pub fn collect_client_hardware() -> Result<NodeHardware, Box<dyn std::error::Err
     Ok(node_hardware)
 }
 
-
 fn list_ethernet_connections() -> io::Result<Vec<(String, i32)>> {
     let items = fs::read_dir("/sys/class/net")?
         .filter_map(|entry| {
             let entry = entry.ok()?; // DirEntry oder skip
             let name = entry.file_name().into_string().ok()?;
-            if !name.contains("en") { return None; }
+            if !name.contains("en") {
+                return None;
+            }
 
-            let ty = fs::read_to_string(entry.path().join("type")).ok()?
-                .trim().parse::<i32>().ok()?;
-            if ty != 1 { return None; }
-
+            let ty = fs::read_to_string(entry.path().join("type"))
+                .ok()?
+                .trim()
+                .parse::<i32>()
+                .ok()?;
+            if ty != 1 {
+                return None;
+            }
 
             let speed = fs::read_to_string(entry.path().join("speed"))
                 .ok()
@@ -94,9 +105,18 @@ fn list_ethernet_connections() -> io::Result<Vec<(String, i32)>> {
     Ok(items)
 }
 
-
-fn list_pci_gpus() -> Result<Vec<GPU>, Error> {
+fn list_pci_gpus() -> Result<Vec<GPU>, Box<dyn std::error::Error>> {
     let mut all_gpus = Vec::new();
+
+
+    let pci_db = Database::get_online().unwrap_or_else(|e| {
+        error!("Failed fetching online PCI database: {e}");
+        info!("Falling back to offline database");
+        Database::read().unwrap()
+    });
+
+
+    let gpu_vram_map = load_gpu_vram_map_from_str(GPU_VRAM_TOML)?;
 
     for entry in fs::read_dir("/sys/bus/pci/devices/")? {
         let pci_entry = entry?;
@@ -104,20 +124,6 @@ fn list_pci_gpus() -> Result<Vec<GPU>, Error> {
         let device_id = pci_entry.path().join("device");
         let class_code = pci_entry.path().join("class");
 
-        let vendor = fs::read_to_string(&vendor_id)
-            .map_err(|e| {
-                error!("Failed reading the GPU vendor {e}");
-                e
-            })?
-            .trim()
-            .to_string();
-        let device = fs::read_to_string(&device_id)
-            .map_err(|e| {
-                error!("Failed reading the GPU device {e}");
-                e
-            })?
-            .trim()
-            .to_string();
         let class = fs::read_to_string(&class_code)
             .map_err(|e| {
                 error!("Failed reading the GPU class {e}");
@@ -130,14 +136,45 @@ fn list_pci_gpus() -> Result<Vec<GPU>, Error> {
             continue;
         }
 
-        let vendor = lookup_vendor(&vendor);
-        let (gpu_name, vram) = lookup_device(&device).unwrap_or(("UNKNOWN", 0));
+        let vendor_string = fs::read_to_string(&vendor_id)
+            .map_err(|e| {
+                error!("Failed reading the GPU vendor {e}");
+                e
+            })?
+            .trim()
+            .to_string();
 
-        if vendor.unwrap_or("UNKNOWN") != "UNKNOWN" {
+        let vendor_hex =
+            u16::from_str_radix(vendor_string.trim_start_matches("0x"), 16).map_err(|e| {
+                error!("Invalid vendor ID {vendor_string}: {e}");
+                e
+            })?;
+
+        let device_string = fs::read_to_string(&device_id)
+            .map_err(|e| {
+                error!("Failed reading the GPU device {e}");
+                e
+            })?
+            .trim()
+            .to_string();
+
+        let device_hex =
+            u16::from_str_radix(device_string.trim_start_matches("0x"), 16).map_err(|e| {
+                error!("Invalid vendor ID {device_string}: {e}");
+                e
+            })?;
+
+        let pci_vendor = pci_db.vendors.get(&vendor_hex);
+        let gpu_device = pci_vendor.and_then(|v| v.devices.get(&device_hex));
+
+        let vendor_mapped = pci_vendor.and_then(|v| map_vendor_to_api_enum(&v.name));
+        let gpu_vram = gpu_vram_map.get(&device_string);
+
+        if vendor_mapped.is_some() && gpu_device.is_some() {
             all_gpus.push(GPU {
-                vendor: vendor.unwrap().to_owned(),
-                gpu_type: gpu_name.to_owned(),
-                vram: vram as u64,
+                vendor: vendor_mapped.unwrap(),
+                gpu_type: gpu_device.unwrap().name.to_owned(),
+                vram: *gpu_vram.unwrap_or(&0),
             })
         }
     }
@@ -170,25 +207,31 @@ fn bytes_to_gib(bytes: u64) -> u64 {
     bytes / (1024 * 1024 * 1024)
 }
 
-fn lookup_vendor(vendor_id: &str) -> Option<&str> {
-    match vendor_id {
-        "0x10de" => Some("NVIDIA"),
-        "0x1002" => Some("AMD"),
-        "0x8086" => Some("Intel"),
+fn map_vendor_to_api_enum(vendor_name: &str) -> Option<String> {
+    match vendor_name {
+        "Advanced Micro Devices, Inc. [AMD/ATI]" => Some(String::from("AMD")),
+        "NVIDIA Corporation" => Some(String::from("NVIDIA")),
+        "Intel Corporation" => Some(String::from("INTEL")),
         _ => None,
     }
 }
 
-fn lookup_device(device_id: &str) -> Option<(&str, u16)> {
-    match device_id {
-        "0x27b8" => Some(("L4", 24)),
-        "0x26b5" => Some(("L40", 48)),
-        "0x26b9" => Some(("L40S", 48)),
-        "0x20b0" => Some(("A100", 40)),
-        "0x20b1" => Some(("A100", 40)),
-        "0x20b2" => Some(("A100", 80)),
-        "0x20b3" => Some(("A100", 80)),
-        "0x740f" => Some(("MI210", 64)),
-        _ => None,
+fn load_gpu_vram_map_from_str(
+    toml_src: &str,
+) -> Result<HashMap<String, u64>, Box<dyn std::error::Error>> {
+    let vendor_map: VendorVRAMMap = toml::from_str(toml_src)?;
+    let mut all = HashMap::new();
+    if let Some(amd) = vendor_map.amd {
+        all.extend(amd);
     }
+    if let Some(nv) = vendor_map.nvidia {
+        all.extend(nv);
+    }
+    Ok(all)
+}
+
+#[derive(Debug, Deserialize)]
+struct VendorVRAMMap {
+    amd: Option<HashMap<String, u64>>,
+    nvidia: Option<HashMap<String, u64>>,
 }
