@@ -20,3 +20,37 @@
 # CDNA3.5 (Sonora Pass)
 "0x75a0" = 288   # Instinct MI350X
 "0x75a3" = 288   # Instinct MI355X
+
+[nvidia]
+
+# Ada Lovelace
+"0x27b8" = 24    # L4 (Ada, 24 GB GDDR6, PCIe Gen4)
+"0x26b5" = 48    # L40 (Ada, PCIe Gen4, 48 GB GDDR6)
+"0x26b8" = 48    # L40G (Ada, PCIe Gen5, 48 GB, AI-tuned)
+"0x26b9" = 48    # L40S (Ada, PCIe Gen5, 48 GB, Tensor-optimized)
+"0x26f5" = 48    # L40 CNX (Ada, GPU + ConnectX-7 NIC, 48 GB)
+
+
+# Ampere
+"0x2235" = 16    # RTX A4000 (GA104GL, 16 GB GDDR6 ECC)
+"0x2237" = 24    # RTX A5000
+"0x2230" = 48    # RTX A6000 (GA102GL, 48 GB GDDR6 ECC)
+"0x20b0" = 40    # A100 SXM4 40 GB
+"0x20b1" = 40    # A100 PCIe 40 GB
+"0x20b2" = 80    # A100 SXM4 80 GB
+"0x20b3" = 80    # A100 SXM4 80 GB (rev)
+"0x2236" = 24    # A10 (GA102, 24 GB GDDR6)
+"0x25b6" = 64    # A16 (GA104 x4, 64 GB total, 4×16 GB)
+
+# Hopper
+"0x2330" = 80    # H100 SXM5 80 GB HBM3
+"0x2331" = 80    # H100 PCIe 80 GB HBM3
+"0x2321" = 94    # H100 NVL (dual GPU NVLink pair, 94 GB)
+"0x2357" = 141   # H200 (Grace Hopper 2, 141 GB HBM3e)
+
+
+# Blackwell
+"0x2901" = 192   # B200 (Blackwell GB100, 192 GB HBM3e)
+"0x2941" = 384   # GB200 (Grace-Blackwell Superchip, 2×192 GB HBM3e)
+
+
