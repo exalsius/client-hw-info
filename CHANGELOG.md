@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.1](https://github.com/exalsius/client-hw-info/compare/v2.3.0...v2.3.1) (2025-10-20)
+
+
+### Bug Fixes
+
+* update config file for re-imported nodes ([117e3ed](https://github.com/exalsius/client-hw-info/commit/117e3ed8ecd1b0d7b5b96eff17e5cc6fa3dbe24d))
+
 ## [2.3.0](https://github.com/exalsius/client-hw-info/compare/v2.2.0...v2.3.0) (2025-10-15)
 
 
