@@ -45,6 +45,6 @@ The tool automatically creates a configuration file under $HOME/.config/exalsius
 
 ## How to build
 
-``cargo build --release`` automatically build a static Linux 64 bit binary as defined in the config.toml file.   
+``cargo build --release`` automatically builds a static Linux 64 bit binary as defined in the config.toml file.   
 Ensure that musl is installed on your system.
 
