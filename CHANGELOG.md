@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.2](https://github.com/exalsius/client-hw-info/compare/v2.3.1...v2.3.2) (2025-11-07)
+
+
+### Bug Fixes
+
+* fix cases where nodes were not detected because they belong to the wrong pci class ([786f503](https://github.com/exalsius/client-hw-info/commit/786f5030ded9d2ab370d8052213689b6c0bcb852))
+
 ## [2.3.1](https://github.com/exalsius/client-hw-info/compare/v2.3.0...v2.3.1) (2025-10-20)
 
 
