@@ -108,13 +108,11 @@ fn list_ethernet_connections() -> io::Result<Vec<(String, i32)>> {
 fn list_pci_gpus() -> Result<Vec<GPU>, Box<dyn std::error::Error>> {
     let mut all_gpus = Vec::new();
 
-
     let pci_db = Database::get_online().unwrap_or_else(|e| {
         error!("Failed fetching online PCI database: {e}");
         info!("Falling back to offline database");
         Database::read().unwrap()
     });
-
 
     let gpu_vram_map = load_gpu_vram_map_from_str(GPU_VRAM_TOML)?;
 
@@ -132,7 +130,7 @@ fn list_pci_gpus() -> Result<Vec<GPU>, Box<dyn std::error::Error>> {
             .trim()
             .to_string();
 
-        if !class.starts_with("0x03") {
+        if !(class.starts_with("0x03") || class.starts_with("0x12") || class.starts_with("0x0302")) {
             continue;
         }
 
