@@ -32,8 +32,10 @@
 
 
 # Ampere
-"0x2235" = 16    # RTX A4000 (GA104GL, 16 GB GDDR6 ECC)
-"0x2237" = 24    # RTX A5000
+"0x2235" = 48    # RTX A40 (GA102GL, 48 GB GDDR6)
+"0x24b0" = 16    # A4000
+"0x2231" = 24    # RTX A5000
+"0x2237" = 24    # A10G (GA102GL, 24 GB GDDR6, Cloud SKU)
 "0x2230" = 48    # RTX A6000 (GA102GL, 48 GB GDDR6 ECC)
 "0x20b0" = 40    # A100 SXM4 40 GB
 "0x20b1" = 40    # A100 PCIe 40 GB
@@ -46,7 +48,7 @@
 "0x2330" = 80    # H100 SXM5 80 GB HBM3
 "0x2331" = 80    # H100 PCIe 80 GB HBM3
 "0x2321" = 94    # H100 NVL (dual GPU NVLink pair, 94 GB)
-"0x2357" = 141   # H200 (Grace Hopper 2, 141 GB HBM3e)
+"0x2335" = 141   # H200 (Grace Hopper 2, 141 GB HBM3e)
 
 
 # Blackwell
