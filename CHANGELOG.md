@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.3](https://github.com/exalsius/client-hw-info/compare/v2.3.2...v2.3.3) (2025-11-24)
+
+
+### Bug Fixes
+
+* fix GPU vram mappings ([0bfbbc8](https://github.com/exalsius/client-hw-info/commit/0bfbbc8a4944e42c99b83e6fe445508dbf5bd69b))
+
 ## [2.3.2](https://github.com/exalsius/client-hw-info/compare/v2.3.1...v2.3.2) (2025-11-07)
 
 
