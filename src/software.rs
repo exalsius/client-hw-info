@@ -3,7 +3,7 @@ use log::info;
 use serde::Serialize;
 use which::{which_global};
 
-#[derive(Debug)]
+#[derive(Serialize, Debug)]
 pub struct NodeSoftware {
     docker : String,
     cuda: String,

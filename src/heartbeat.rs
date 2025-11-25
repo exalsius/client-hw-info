@@ -1,5 +1,5 @@
 use log::{error, info, warn};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use crate::hardware::NodeHardware;
 use crate::software::NodeSoftware;
 
@@ -7,9 +7,15 @@ pub(crate) fn send_heartbeat(node_id: &str, api_url: &str, auth_token: &str, nod
     info!("Sending heartbeat");
     let client = reqwest::blocking::Client::new();
     let final_endpoint = api_url.to_string() + "/node/" + node_id;
+
+    let payload = HeartbeatRequest {
+        hardware: node_hardware,
+        software: node_software,
+    };
+
     let resp = client
         .patch(final_endpoint)
-        .json(&node_hardware)
+        .json(&payload)
         .bearer_auth(auth_token)
         .send();
 
@@ -42,4 +48,10 @@ struct HeartbeatResponse {
     next_access_token: String,
     next_access_token_expires_in: u64,
     next_access_token_type: String
+}
+
+#[derive(Serialize)]
+struct HeartbeatRequest<'a> {
+    hardware: &'a NodeHardware,
+    software: &'a NodeSoftware,
 }
