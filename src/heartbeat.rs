@@ -1,8 +1,9 @@
 use log::{error, info, warn};
 use serde::Deserialize;
 use crate::hardware::NodeHardware;
+use crate::software::NodeSoftware;
 
-pub(crate) fn send_heartbeat(node_id: &str, api_url: &str, auth_token: &str, node_hardware: &NodeHardware) -> Result<String, Box<dyn std::error::Error>> {
+pub(crate) fn send_heartbeat(node_id: &str, api_url: &str, auth_token: &str, node_hardware: &NodeHardware, node_software: &NodeSoftware) -> Result<String, Box<dyn std::error::Error>> {
     info!("Sending heartbeat");
     let client = reqwest::blocking::Client::new();
     let final_endpoint = api_url.to_string() + "/node/" + node_id;

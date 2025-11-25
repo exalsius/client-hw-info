@@ -2,6 +2,7 @@
 mod config;
 mod hardware;
 mod heartbeat;
+mod software;
 
 use argh::FromArgs;
 use env_logger::{Builder, Env};
@@ -42,8 +43,10 @@ fn main() {
         }
     };
 
+    let node_software = software::collect_software_info();
+
     if cli_arguments.skip_heartbeat {
-        info!("Hardware collected (heartbeat skipped by flag)");
+        info!("Hardware and Software collected (heartbeat skipped by flag)");
         return;
     }
 
@@ -59,7 +62,7 @@ fn main() {
         }
     };
 
-    let new_auth_tkn = match heartbeat::send_heartbeat(&node_id, &api_endpoint, &auth_tkn, &node_hardware) {
+    let new_auth_tkn = match heartbeat::send_heartbeat(&node_id, &api_endpoint, &auth_tkn, &node_hardware, &node_software) {
         Ok(new_auth_tkn) => new_auth_tkn,
         Err(e) => {
             error!("Error: {}", e);
