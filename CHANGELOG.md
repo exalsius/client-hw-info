@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.0](https://github.com/exalsius/client-hw-info/compare/v2.3.3...v2.4.0) (2025-11-25)
+
+
+### Features
+
+* Feat/node software ([#22](https://github.com/exalsius/client-hw-info/issues/22)) ([f8df3ed](https://github.com/exalsius/client-hw-info/commit/f8df3ed96a0a509c0d589a6dee6284d338570ed2))
+
 ## [2.3.3](https://github.com/exalsius/client-hw-info/compare/v2.3.2...v2.3.3) (2025-11-24)
 
 
