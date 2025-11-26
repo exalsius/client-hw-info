@@ -24,6 +24,12 @@ Download the latest release from the [releases page](https://github.com/exalsius
 Ensure that the binary is executable. If not, run ``chmod +x client-hw-info-v*``  
 Execute ``./client-hw-info-v* --skip-heartbeat`` 
 
+## How to build
+
+``cargo build --release`` automatically builds a static Linux 64 bit binary as defined in the config.toml file.   
+Ensure that musl is installed on your system.
+
+
 ## How to run
 
 Simply execute ``./target/release/client-hw-info-v*`` if you built it or execute the binary in the release folder if you downloaded a release.
@@ -43,8 +49,4 @@ Optional execution:
 The tool automatically creates a configuration file under $HOME/.config/exalsius/config.env from which the values are fetched.
 
 
-## How to build
-
-``cargo build --release`` automatically builds a static Linux 64 bit binary as defined in the config.toml file.   
-Ensure that musl is installed on your system.
 
