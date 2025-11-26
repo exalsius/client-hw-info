@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.0](https://github.com/exalsius/client-hw-info/compare/v2.4.0...v2.5.0) (2025-11-26)
+
+
+### Features
+
+* (chore) add support for reading the os details and some docs ([415042d](https://github.com/exalsius/client-hw-info/commit/415042d754b1344f830a19d16ac8ffd0d4b1e674))
+
 ## [2.4.0](https://github.com/exalsius/client-hw-info/compare/v2.3.3...v2.4.0) (2025-11-25)
 
 
