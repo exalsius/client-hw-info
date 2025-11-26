@@ -2,8 +2,9 @@ use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use crate::hardware::NodeHardware;
 use crate::software::NodeSoftware;
+use crate::system::NodeSystem;
 
-pub(crate) fn send_heartbeat(node_id: &str, api_url: &str, auth_token: &str, node_hardware: &NodeHardware, node_software: &NodeSoftware) -> Result<String, Box<dyn std::error::Error>> {
+pub(crate) fn send_heartbeat(node_id: &str, api_url: &str, auth_token: &str, node_hardware: &NodeHardware, node_software: &NodeSoftware, node_system: &NodeSystem) -> Result<String, Box<dyn std::error::Error>> {
     info!("Sending heartbeat");
     let client = reqwest::blocking::Client::new();
     let final_endpoint = api_url.to_string() + "/node/" + node_id;
@@ -11,6 +12,7 @@ pub(crate) fn send_heartbeat(node_id: &str, api_url: &str, auth_token: &str, nod
     let payload = HeartbeatRequest {
         hardware: node_hardware,
         software: node_software,
+        system: node_system
     };
 
     let resp = client
@@ -54,4 +56,5 @@ struct HeartbeatResponse {
 struct HeartbeatRequest<'a> {
     hardware: &'a NodeHardware,
     software: &'a NodeSoftware,
+    system: &'a NodeSystem
 }

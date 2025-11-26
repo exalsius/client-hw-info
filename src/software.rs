@@ -2,12 +2,13 @@ use std::process::Command;
 use log::info;
 use serde::Serialize;
 use which::{which_global};
+use sysinfo::{System};
 
 #[derive(Serialize, Debug)]
 pub struct NodeSoftware {
     docker : String,
-    cuda: String,
-    rocm: String
+    nvidia: String,
+    amd: String
 }
 
 fn get_version<P: AsRef<std::ffi::OsStr>>(bin: P, args: &[&str]) -> Option<String> {
@@ -58,8 +59,8 @@ pub fn collect_software_info() -> NodeSoftware {
 
     let software_info = NodeSoftware {
         docker: docker_infos,
-        cuda: nvidia_smi_infos,
-        rocm: amd_smi_infos
+        nvidia: nvidia_smi_infos,
+        amd: amd_smi_infos
     };
 
     info!("Finished collecting client software versions");

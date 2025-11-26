@@ -1,13 +1,12 @@
-
 mod config;
 mod hardware;
 mod heartbeat;
 mod software;
+mod system;
 
 use argh::FromArgs;
 use env_logger::{Builder, Env};
 use log::{error, info};
-
 
 #[derive(FromArgs)]
 ///   Parameters for the client hardware info tool.
@@ -45,8 +44,10 @@ fn main() {
 
     let node_software = software::collect_software_info();
 
+    let node_system = system::collect_system_info();
+
     if cli_arguments.skip_heartbeat {
-        info!("Hardware and Software collected (heartbeat skipped by flag)");
+        info!("Hardware, Software, and OS details collected (heartbeat skipped by flag)");
         return;
     }
 
@@ -62,7 +63,14 @@ fn main() {
         }
     };
 
-    let new_auth_tkn = match heartbeat::send_heartbeat(&node_id, &api_endpoint, &auth_tkn, &node_hardware, &node_software) {
+    let new_auth_tkn = match heartbeat::send_heartbeat(
+        &node_id,
+        &api_endpoint,
+        &auth_tkn,
+        &node_hardware,
+        &node_software,
+        &node_system,
+    ) {
         Ok(new_auth_tkn) => new_auth_tkn,
         Err(e) => {
             error!("Error: {}", e);
@@ -70,8 +78,8 @@ fn main() {
         }
     };
 
-    config::write_new_auth_token(&new_auth_tkn).expect("Failed writing new auth token to config file");
+    config::write_new_auth_token(&new_auth_tkn)
+        .expect("Failed writing new auth token to config file");
 
     info!("Finished client hardware info tool");
 }
-
