@@ -11,6 +11,11 @@ use log::{error, info};
 #[derive(FromArgs)]
 ///   Parameters for the client hardware info tool.
 struct CliArguments {
+
+    /// print the version and exit.
+    #[argh(switch, short = 'V')]
+    version: bool,
+
     /// the refresh token for acquiring the access token.
     #[argh(option)]
     access_token: Option<String>,
@@ -30,9 +35,19 @@ struct CliArguments {
 
 fn main() {
     Builder::from_env(Env::default().default_filter_or("info")).init();
-    info!("Starting client hardware info tool");
 
     let cli_arguments: CliArguments = argh::from_env();
+
+    if cli_arguments.version {
+        println!(
+            "{} {}",
+            env!("CARGO_PKG_NAME"),
+            env!("CARGO_PKG_VERSION"),
+        );
+        return;
+    }
+
+    info!("Starting client hardware info tool");
 
     let node_hardware = match hardware::collect_client_hardware() {
         Ok(node_hardware) => node_hardware,

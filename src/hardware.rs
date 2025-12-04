@@ -2,7 +2,6 @@ use log::{error, info};
 use pciid_parser::Database;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::error::Error;
 use std::path::Path;
 use std::{fs, io};
 use sysinfo::{Disks, System};

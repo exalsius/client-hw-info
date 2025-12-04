@@ -2,7 +2,6 @@ use std::process::Command;
 use log::info;
 use serde::Serialize;
 use which::{which_global};
-use sysinfo::{System};
 
 #[derive(Serialize, Debug)]
 pub struct NodeSoftware {
