@@ -32,7 +32,7 @@ Ensure that musl is installed on your system.
 
 ## How to run
 
-Simply execute ``./target/release/client-hw-info-v*`` if you built it or execute the binary in the release folder if you downloaded a release.
+Execute ``./target/release/client-hw-info-v*`` if you built it or execute the binary in the release folder if you downloaded a release.
 
 There are 3 arguments that need to be passed *initially* when first running the application to send a periodical heartbeat to the server. 
 Afterward, the application will fetch the env information from the config file and passing them is not necessary.
@@ -45,6 +45,10 @@ If you want to change the configuration, you can pass the arguments again and th
 Optional execution:
 
 `--skip-heartbeat`  If set, the heartbeat will not be sent and only hardware information will be fetched. No configuration file will be created.
+
+Check version:
+
+``--version`` to show the tools version
 
 The tool automatically creates a configuration file under $HOME/.config/exalsius/config.env from which the values are fetched.
 
