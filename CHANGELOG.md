@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.0](https://github.com/exalsius/client-hw-info/compare/v2.5.0...v2.6.0) (2026-01-13)
+
+
+### Features
+
+* add version functionality ([cb7c7bb](https://github.com/exalsius/client-hw-info/commit/cb7c7bb671b577bd256c50a5083a7818270630fa))
+
 ## [2.5.0](https://github.com/exalsius/client-hw-info/compare/v2.4.0...v2.5.0) (2025-11-26)
 
 
