@@ -40,7 +40,8 @@
 "0x20b0" = 40    # A100 SXM4 40 GB
 "0x20b1" = 40    # A100 PCIe 40 GB
 "0x20b2" = 80    # A100 SXM4 80 GB
-"0x20b3" = 80    # A100 SXM4 80 GB (rev)
+"0x20b3" = 64    # A100 SXM 64 GB (rev)
+"0x20b5" = 80    # 100 PCIe 80GB
 "0x2236" = 24    # A10 (GA102, 24 GB GDDR6)
 "0x25b6" = 64    # A16 (GA104 x4, 64 GB total, 4×16 GB)
 
