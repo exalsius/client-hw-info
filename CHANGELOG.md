@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.1](https://github.com/exalsius/client-hw-info/compare/v2.6.0...v2.6.1) (2026-01-13)
+
+
+### Bug Fixes
+
+* fix VRAM mapping and add A100 variant ([b9a8f85](https://github.com/exalsius/client-hw-info/commit/b9a8f858ce0a2bb22e0cc6cfcd57b322bd9b0930))
+
 ## [2.6.0](https://github.com/exalsius/client-hw-info/compare/v2.5.0...v2.6.0) (2026-01-13)
 
 
