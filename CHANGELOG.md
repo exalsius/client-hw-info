@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.1](https://github.com/exalsius/client-hw-info/compare/v2.7.0...v2.7.1) (2026-03-25)
+
+
+### Bug Fixes
+
+* adjust request names ([#30](https://github.com/exalsius/client-hw-info/issues/30)) ([270292e](https://github.com/exalsius/client-hw-info/commit/270292e4564598b731ad959902e19facbd89592c))
+
 ## [2.7.0](https://github.com/exalsius/client-hw-info/compare/v2.6.1...v2.7.0) (2026-03-25)
 
 
