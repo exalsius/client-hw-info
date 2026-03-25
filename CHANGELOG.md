@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.0](https://github.com/exalsius/client-hw-info/compare/v2.6.1...v2.7.0) (2026-03-25)
+
+
+### Features
+
+* add self-registering functionality ([#28](https://github.com/exalsius/client-hw-info/issues/28)) ([beb56d5](https://github.com/exalsius/client-hw-info/commit/beb56d5fdc5b119c2b36d75a7d1b3535997ea94d))
+
 ## [2.6.1](https://github.com/exalsius/client-hw-info/compare/v2.6.0...v2.6.1) (2026-01-13)
 
 
