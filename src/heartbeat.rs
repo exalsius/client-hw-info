@@ -1,10 +1,17 @@
-use log::{error, info, warn};
-use serde::{Deserialize, Serialize};
 use crate::hardware::NodeHardware;
 use crate::software::NodeSoftware;
 use crate::system::NodeSystem;
+use log::{error, info, warn};
+use serde::{Deserialize, Serialize};
 
-pub(crate) fn send_heartbeat(node_id: &str, api_url: &str, auth_token: &str, node_hardware: &NodeHardware, node_software: &NodeSoftware, node_system: &NodeSystem) -> Result<String, Box<dyn std::error::Error>> {
+pub(crate) fn send_heartbeat(
+    node_id: &str,
+    api_url: &str,
+    auth_token: &str,
+    node_hardware: &NodeHardware,
+    node_software: &NodeSoftware,
+    node_system: &NodeSystem,
+) -> Result<String, Box<dyn std::error::Error>> {
     info!("Sending heartbeat");
     let client = reqwest::blocking::Client::new();
     let final_endpoint = api_url.to_string() + "/node/" + node_id;
@@ -12,7 +19,7 @@ pub(crate) fn send_heartbeat(node_id: &str, api_url: &str, auth_token: &str, nod
     let payload = HeartbeatRequest {
         hardware: node_hardware,
         software: node_software,
-        system: node_system
+        system: node_system,
     };
 
     let resp = client
@@ -25,36 +32,33 @@ pub(crate) fn send_heartbeat(node_id: &str, api_url: &str, auth_token: &str, nod
         Ok(resp) => {
             if resp.status().is_success() {
                 let parsed = resp.json::<HeartbeatResponse>().map_err(|e| {
-                    error!("Failed parsing server response: {}", e); e
+                    error!("Failed parsing server response: {}", e);
+                    e
                 })?;
 
                 info!("Successfully sent heartbeat and patched node hardware");
                 Ok(parsed.next_access_token)
             } else {
-                warn!("Heartbeat went through but server responded with status code {}", resp.status());
+                warn!(
+                    "Heartbeat went through but server responded with status code {}",
+                    resp.status()
+                );
                 Err(format!("heartbeat failed with status {}", resp.status()).into())
             }
         }
-        Err(e) => {
-            Err(e.into())
-        }
-
+        Err(e) => Err(e.into()),
     }
-
 }
-
 
 #[derive(Deserialize, Debug)]
 struct HeartbeatResponse {
-    node_id: String,
     next_access_token: String,
-    next_access_token_expires_in: u64,
-    next_access_token_type: String
+
 }
 
 #[derive(Serialize)]
 struct HeartbeatRequest<'a> {
     hardware: &'a NodeHardware,
     software: &'a NodeSoftware,
-    system: &'a NodeSystem
+    system: &'a NodeSystem,
 }

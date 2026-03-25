@@ -5,9 +5,9 @@ use which::{which_global};
 
 #[derive(Serialize, Debug)]
 pub struct NodeSoftware {
-    docker : String,
-    nvidia: String,
-    amd: String
+    pub docker : String,
+    pub nvidia: String,
+    pub amd: String
 }
 
 fn get_version<P: AsRef<std::ffi::OsStr>>(bin: P, args: &[&str]) -> Option<String> {

@@ -4,8 +4,8 @@ use sysinfo::System;
 
 #[derive(Serialize, Debug)]
 pub struct NodeSystem {
-    os: String,
-    kernel: String,
+    pub os: String,
+    pub kernel: String,
 }
 
 pub fn collect_system_info() -> NodeSystem {

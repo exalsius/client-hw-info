@@ -1,6 +1,7 @@
 mod config;
 mod hardware;
 mod heartbeat;
+mod self_register;
 mod software;
 mod system;
 
@@ -11,7 +12,6 @@ use log::{error, info};
 #[derive(FromArgs)]
 ///   Parameters for the client hardware info tool.
 struct CliArguments {
-
     /// print the version and exit.
     #[argh(switch, short = 'V')]
     version: bool,
@@ -31,6 +31,34 @@ struct CliArguments {
     /// you can skip the heartbeat sending to only run the hardware identification.
     #[argh(switch)]
     skip_heartbeat: bool,
+
+    /// start self-registering workflow. Only works once.
+    #[argh(switch)]
+    self_register: bool,
+
+    /// the register token of the self-registering node that can be retrieved in the user profile
+    #[argh(option)]
+    register_token: Option<String>,
+
+    /// the node name of the self-registering node
+    #[argh(option)]
+    node_name: Option<String>,
+
+    /// the ip address of the self-registering node
+    #[argh(option)]
+    ip_addr: Option<String>,
+
+    /// the port of the self-registering node
+    #[argh(option)]
+    port: Option<u16>,
+
+    /// the username of the self-registering node
+    #[argh(option)]
+    username: Option<String>,
+
+    /// the private key id of the self-registering node
+    #[argh(option)]
+    private_key_id: Option<String>,
 }
 
 fn main() {
@@ -39,11 +67,7 @@ fn main() {
     let cli_arguments: CliArguments = argh::from_env();
 
     if cli_arguments.version {
-        println!(
-            "{} {}",
-            env!("CARGO_PKG_NAME"),
-            env!("CARGO_PKG_VERSION"),
-        );
+        println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"),);
         return;
     }
 
@@ -64,6 +88,55 @@ fn main() {
     if cli_arguments.skip_heartbeat {
         info!("Hardware, Software, and OS details collected (heartbeat skipped by flag)");
         return;
+    }
+
+    if cli_arguments.self_register {
+        if cli_arguments.register_token.is_none()
+            || cli_arguments.username.is_none()
+            || cli_arguments.private_key_id.is_none()
+            || cli_arguments.node_name.is_none()
+            || cli_arguments.ip_addr.is_none()
+            || cli_arguments.port.is_none()
+            || cli_arguments.api_url.is_none()
+        {
+            error!(
+                "Error: self-registering requires register token, username, private key id, node name, ip address, port, and api url"
+            );
+            return;
+        }
+
+        info!("Starting self-registering process");
+
+        let api_url = cli_arguments.api_url.unwrap();
+        let username = cli_arguments.username.unwrap();
+        let private_key_id = cli_arguments.private_key_id.unwrap();
+        let register_token = cli_arguments.register_token.unwrap();
+        let node_name = cli_arguments.node_name.unwrap();
+        let ip_addr = cli_arguments.ip_addr.unwrap();
+        let port = cli_arguments.port.unwrap();
+
+        match self_register::self_register(
+            &api_url,
+            &register_token,
+            &node_hardware,
+            &node_software,
+            &node_system,
+            &username,
+            &private_key_id,
+            &node_name,
+            &ip_addr,
+            &port,
+            &0.0,
+        ) {
+            Ok(_) => {
+                info!("Successfully registered node");
+                return;
+            }
+            Err(e) => {
+                error!("Error: {}", e);
+                return;
+            }
+        }
     }
 
     let (node_id, api_endpoint, auth_tkn) = match config::lookup_configuration(
