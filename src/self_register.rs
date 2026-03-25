@@ -12,11 +12,10 @@ struct SelfRegisterRequest<'a> {
     software: &'a NodeSoftware,
     system: &'a NodeSystem,
     username: &'a str,
-    private_key_id: &'a str,
-    node_name: &'a str,
-    port: &'a u16,
-    ip_addr: &'a String,
-    price_per_hour: &'a f64,
+    ssh_key_id: &'a str,
+    hostname: &'a str,
+    endpoint: &'a String,
+    price_per_hour: f64,
 }
 #[derive(Deserialize, Debug)]
 pub(crate) struct SelfRegisterResponse {
@@ -31,11 +30,11 @@ pub(crate) fn self_register(
     node_software: &NodeSoftware,
     node_system: &NodeSystem,
     username: &str,
-    private_key_id: &str,
-    node_name: &str,
+    ssh_key_id: &str,
+    hostname: &str,
     ip_addr: &String,
-    port: &u16,
-    price_per_hour: &f64,
+    port: u16,
+    price_per_hour: f64,
 ) -> Result<SelfRegisterResponse, Box<dyn std::error::Error>> {
     let client = reqwest::blocking::Client::new();
 
@@ -46,11 +45,10 @@ pub(crate) fn self_register(
         hardware: node_hardware,
         software: node_software,
         system: node_system,
-        private_key_id,
+        ssh_key_id,
         username,
-        node_name,
-        port,
-        ip_addr,
+        hostname,
+        endpoint: &format!("{}:{}", ip_addr, port),
         price_per_hour,
     };
     info!("Sending self-register request to {}", final_endpoint);
@@ -140,7 +138,7 @@ mod tests {
         let username = "ubuntu";
         let register_token = "TOKEN_IN_USER_PROFILE";
         let private_key_id = "PRIVATE_KEY_TO_ACCESS_NODE";
-        let node_name = "node-1";
+        let hostname = "node-1";
         let port = 22;
         let ip_addr = "127.0.0.1".to_string();
         let price_per_hour = 1.25;
@@ -153,10 +151,10 @@ mod tests {
             &system,
             private_key_id,
             username,
-            node_name,
+            hostname,
             &ip_addr,
-            &port,
-            &price_per_hour,
+            port,
+            price_per_hour,
         );
 
         assert!(result.is_ok());

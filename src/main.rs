@@ -42,7 +42,7 @@ struct CliArguments {
 
     /// the node name of the self-registering node
     #[argh(option)]
-    node_name: Option<String>,
+    hostname: Option<String>,
 
     /// the ip address of the self-registering node
     #[argh(option)]
@@ -94,7 +94,7 @@ fn main() {
         if cli_arguments.register_token.is_none()
             || cli_arguments.username.is_none()
             || cli_arguments.private_key_id.is_none()
-            || cli_arguments.node_name.is_none()
+            || cli_arguments.hostname.is_none()
             || cli_arguments.ip_addr.is_none()
             || cli_arguments.port.is_none()
             || cli_arguments.api_url.is_none()
@@ -111,7 +111,7 @@ fn main() {
         let username = cli_arguments.username.unwrap();
         let private_key_id = cli_arguments.private_key_id.unwrap();
         let register_token = cli_arguments.register_token.unwrap();
-        let node_name = cli_arguments.node_name.unwrap();
+        let hostname = cli_arguments.hostname.unwrap();
         let ip_addr = cli_arguments.ip_addr.unwrap();
         let port = cli_arguments.port.unwrap();
 
@@ -123,10 +123,10 @@ fn main() {
             &node_system,
             &username,
             &private_key_id,
-            &node_name,
+            &hostname,
             &ip_addr,
-            &port,
-            &0.0,
+            port,
+            0.0,
         ) {
             Ok(_) => {
                 info!("Successfully registered node");
