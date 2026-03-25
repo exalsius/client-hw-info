@@ -7,5 +7,5 @@ fn no_error() {
     let mut cmd = Command::cargo_bin("client-hw-info").unwrap();
     cmd.arg("--skip-heartbeat").assert().success();
     cmd.arg("--skip-heartbeat").assert().stderr(contains("ERROR").not());
-    cmd.arg("--skip-heartbeat").assert().stderr(contains("Hardware collected"));
+    cmd.arg("--skip-heartbeat").assert().stderr(contains("Finished collecting hardware information"));
 }

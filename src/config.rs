@@ -6,7 +6,7 @@ use std::os::unix::fs::OpenOptionsExt;
 use std::path::PathBuf;
 use std::{env, fs};
 
-fn config_file_path() -> Result<PathBuf, Box<dyn std::error::Error>> {
+pub(crate) fn config_file_path() -> Result<PathBuf, Box<dyn std::error::Error>> {
     let home = dirs::home_dir().ok_or("HOME not set")?;
     let dir = home.join(".config").join("exalsius");
     let file = dir.join("config.env");
@@ -110,12 +110,13 @@ fn ensure_config_file(
     Ok(())
 }
 
-fn create_config_file(
+pub(crate) fn create_config_file(
     path: &PathBuf,
     node_id: &str,
     api_url: &str,
     auth_token: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
+
     info!("Start creating new configuration file");
     let mut opts = OpenOptions::new();
     opts.create(true).write(true).truncate(true);

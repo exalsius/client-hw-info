@@ -187,13 +187,13 @@ struct GPU {
 
 #[derive(Serialize, Debug)]
 pub struct NodeHardware {
-    gpu_count: u8,
-    gpu_vendor: String,
-    gpu_type: String,
-    gpu_memory: u64,
-    cpu_cores: u64,
-    memory_gb: u64,
-    storage_gb: u64,
+    pub gpu_count: u8,
+    pub gpu_vendor: String,
+    pub gpu_type: String,
+    pub gpu_memory: u64,
+    pub cpu_cores: u64,
+    pub memory_gb: u64,
+    pub storage_gb: u64,
 }
 
 fn bytes_to_gb(bytes: u64) -> u64 {
