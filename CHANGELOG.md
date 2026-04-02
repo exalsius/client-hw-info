@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.3](https://github.com/exalsius/client-hw-info/compare/v2.7.2...v2.7.3) (2026-04-02)
+
+
+### Bug Fixes
+
+* fix path for self-registering functionality ([be2d5bc](https://github.com/exalsius/client-hw-info/commit/be2d5bcfa2c97554488ca30fa656c932acecc452))
+
 ## [2.7.2](https://github.com/exalsius/client-hw-info/compare/v2.7.1...v2.7.2) (2026-04-02)
 
 
