@@ -49,7 +49,11 @@ pub(crate) fn lookup_configuration(
     }
 
     info!("Successfully loaded configuration from file");
-    Ok((env_node_id, env_api_url, env_auth_token))
+    Ok((
+        node_id.unwrap_or(env_node_id),
+        api_url.unwrap_or(env_api_url),
+        auth_token.unwrap_or(env_auth_token),
+    ))
 }
 
 fn update_config_file(
