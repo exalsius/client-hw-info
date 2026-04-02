@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.2](https://github.com/exalsius/client-hw-info/compare/v2.7.1...v2.7.2) (2026-04-02)
+
+
+### Bug Fixes
+
+* ensure new config values are used ([1b2b270](https://github.com/exalsius/client-hw-info/commit/1b2b270c5f120430c32df443ffa2616c6f03df31))
+
 ## [2.7.1](https://github.com/exalsius/client-hw-info/compare/v2.7.0...v2.7.1) (2026-03-25)
 
 
