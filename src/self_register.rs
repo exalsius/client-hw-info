@@ -1,9 +1,23 @@
+use std::{env, fs};
+use std::path::{Path, PathBuf};
+use std::process::Command;
 use crate::hardware::NodeHardware;
 use crate::software::NodeSoftware;
 use crate::system::NodeSystem;
 use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use crate::config;
+
+
+const SYSTEMD_SERVICE_TEMPLATE: &str = include_str!(concat!(
+env!("CARGO_MANIFEST_DIR"),
+"/assets/systemd/client-hw-info.service"
+));
+
+const SYSTEMD_TIMER_TEMPLATE: &str = include_str!(concat!(
+env!("CARGO_MANIFEST_DIR"),
+"/assets/systemd/client-hw-info.timer"
+));
 
 #[derive(Serialize)]
 struct SelfRegisterRequest<'a> {
@@ -67,18 +81,72 @@ pub(crate) fn self_register(
         match config::create_config_file(&cfg_path, &parsed.node_id, api_url, &parsed.next_access_token) {
             Ok(_) => {
                 info!("Successfully created new configuration file for newly registered node");
-                Ok(parsed)
             }
             Err(e) => {
                 error!("Failed creating new configuration file for newly registered node: {}", e);
-                Err(e)
+                return Err(e)
             }
         }
+
+        create_systemd_service()?;
+        create_systemd_timer(15)?;
+        reload_and_enable_timer()?;
+
+        Ok(parsed)
 
     } else {
         warn!("Self-register request failed with status {}", resp.status());
         Err(format!("self-register failed with status {}", resp.status()).into())
     }
+}
+
+fn create_systemd_service() -> Result<(), Box<dyn std::error::Error>> {
+    info!("Creating systemd service for node");
+
+    let current_binary_path: PathBuf = env::current_exe()?;
+    let current_binary_path_string = current_binary_path.display().to_string();
+
+    let rendered = SYSTEMD_SERVICE_TEMPLATE.replace("{{EXEC_START}}", &current_binary_path_string);
+
+    let service_path = Path::new("/etc/systemd/system/client-hw-info.service");
+    fs::write(service_path, rendered)?;
+    Ok(())
+}
+
+fn create_systemd_timer(heartbeat_interval: u8) -> Result<(), Box<dyn std::error::Error>> {
+    info!("Creating systemd timer for node");
+
+    let rendered = SYSTEMD_TIMER_TEMPLATE.replace("{{HEARTBEAT_INTERVAL_MINUTES}}", &heartbeat_interval.to_string());
+
+    let timer_path = Path::new("/etc/systemd/system/client-hw-info.timer");
+
+    fs::write(timer_path, rendered)?;
+
+
+    Ok(())
+}
+
+fn reload_and_enable_timer() -> Result<(), Box<dyn std::error::Error>> {
+
+    let reload_status = Command::new("systemctl")
+        .arg("daemon-reload")
+        .status()?;
+
+    if !reload_status.success() {
+        return Err("systemctl daemon-reload failed".into());
+    }
+
+    let enable_status = Command::new("systemctl")
+        .args(["enable", "--now", "client-hw-info.timer"])
+        .status()?;
+
+    if !enable_status.success() {
+        return Err("systemctl enable --now client-hw-info.timer failed".into());
+    }
+
+
+    Ok(())
+
 }
 
 #[cfg(test)]
