@@ -38,7 +38,7 @@ pub(crate) fn self_register(
 ) -> Result<SelfRegisterResponse, Box<dyn std::error::Error>> {
     let client = reqwest::blocking::Client::new();
 
-    let final_endpoint = api_url.to_string() + "/self-register";
+    let final_endpoint = api_url.to_string() + "node/self-register";
 
     let payload = SelfRegisterRequest {
         register_token,
