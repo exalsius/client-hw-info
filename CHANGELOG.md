@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.1](https://github.com/exalsius/client-hw-info/compare/v2.8.0...v2.8.1) (2026-04-07)
+
+
+### Bug Fixes
+
+* remove trailing slash to make method more robust ([4c3dbbd](https://github.com/exalsius/client-hw-info/commit/4c3dbbd56e769eb958c000fccf3fbe37341cfe09))
+
 ## [2.8.0](https://github.com/exalsius/client-hw-info/compare/v2.7.3...v2.8.0) (2026-04-07)
 
 
