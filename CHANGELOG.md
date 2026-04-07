@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.8.0](https://github.com/exalsius/client-hw-info/compare/v2.7.3...v2.8.0) (2026-04-07)
+
+
+### Features
+
+* prepare systemd service and timer ([cedc2ef](https://github.com/exalsius/client-hw-info/commit/cedc2ef487230e41aa54f50a025dc52c13b1d902))
+* systemd ([93e0117](https://github.com/exalsius/client-hw-info/commit/93e0117c1fd74ba5d027fb3b79a2ae1c65a0b5c9))
+
 ## [2.7.3](https://github.com/exalsius/client-hw-info/compare/v2.7.2...v2.7.3) (2026-04-02)
 
 
