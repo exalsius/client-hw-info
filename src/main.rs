@@ -59,6 +59,10 @@ struct CliArguments {
     /// the private key id of the self-registering node
     #[argh(option)]
     private_key_id: Option<String>,
+
+    /// skip systemd service creation when running self-registering
+    #[argh(switch)]
+    skip_systemd: bool
 }
 
 fn main() {
@@ -114,6 +118,7 @@ fn main() {
         let hostname = cli_arguments.hostname.unwrap();
         let ip_addr = cli_arguments.ip_addr.unwrap();
         let port = cli_arguments.port.unwrap();
+        let skip_systemd = cli_arguments.skip_systemd;
 
         match self_register::self_register(
             &api_url,
@@ -127,6 +132,7 @@ fn main() {
             &ip_addr,
             port,
             0.0,
+            skip_systemd
         ) {
             Ok(_) => {
                 info!("Successfully registered node");

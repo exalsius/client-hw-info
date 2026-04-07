@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Client Hardware info tool every {{HEARTBEAT_INTERVAL_MINUTES}} minute(s)
+
+[Timer]
+OnActiveSec=1min
+OnUnitActiveSec={{HEARTBEAT_INTERVAL_MINUTES}}min
+Persistent=true
+Unit=client-hw-info.service
+
+[Install]
+WantedBy=timers.target

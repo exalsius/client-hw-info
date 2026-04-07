@@ -1,0 +1,8 @@
+[Unit]
+Description=Periodically running the node agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart={{EXEC_START}}
