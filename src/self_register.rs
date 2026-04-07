@@ -1,22 +1,21 @@
-use std::{env, fs};
-use std::path::{Path, PathBuf};
-use std::process::Command;
+use crate::config;
 use crate::hardware::NodeHardware;
 use crate::software::NodeSoftware;
 use crate::system::NodeSystem;
 use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
-use crate::config;
-
+use std::path::{Path, PathBuf};
+use std::process::Command;
+use std::{env, fs};
 
 const SYSTEMD_SERVICE_TEMPLATE: &str = include_str!(concat!(
-env!("CARGO_MANIFEST_DIR"),
-"/assets/systemd/client-hw-info.service"
+    env!("CARGO_MANIFEST_DIR"),
+    "/assets/systemd/client-hw-info.service"
 ));
 
 const SYSTEMD_TIMER_TEMPLATE: &str = include_str!(concat!(
-env!("CARGO_MANIFEST_DIR"),
-"/assets/systemd/client-hw-info.timer"
+    env!("CARGO_MANIFEST_DIR"),
+    "/assets/systemd/client-hw-info.timer"
 ));
 
 #[derive(Serialize)]
@@ -49,6 +48,7 @@ pub(crate) fn self_register(
     ip_addr: &String,
     port: u16,
     price_per_hour: f64,
+    skip_systemd: bool,
 ) -> Result<SelfRegisterResponse, Box<dyn std::error::Error>> {
     let client = reqwest::blocking::Client::new();
 
@@ -78,22 +78,31 @@ pub(crate) fn self_register(
         info!("Successfully parsed self-register response. Writing new configuration file.");
         let cfg_path = crate::config::config_file_path()?;
 
-        match config::create_config_file(&cfg_path, &parsed.node_id, api_url, &parsed.next_access_token) {
+        match config::create_config_file(
+            &cfg_path,
+            &parsed.node_id,
+            api_url,
+            &parsed.next_access_token,
+        ) {
             Ok(_) => {
                 info!("Successfully created new configuration file for newly registered node");
             }
             Err(e) => {
-                error!("Failed creating new configuration file for newly registered node: {}", e);
-                return Err(e)
+                error!(
+                    "Failed creating new configuration file for newly registered node: {}",
+                    e
+                );
+                return Err(e);
             }
         }
 
-        create_systemd_service()?;
-        create_systemd_timer(15)?;
-        reload_and_enable_timer()?;
+        if !skip_systemd {
+            create_systemd_service()?;
+            create_systemd_timer(15)?;
+            reload_and_enable_timer()?;
+        }
 
         Ok(parsed)
-
     } else {
         warn!("Self-register request failed with status {}", resp.status());
         Err(format!("self-register failed with status {}", resp.status()).into())
@@ -116,21 +125,20 @@ fn create_systemd_service() -> Result<(), Box<dyn std::error::Error>> {
 fn create_systemd_timer(heartbeat_interval: u8) -> Result<(), Box<dyn std::error::Error>> {
     info!("Creating systemd timer for node");
 
-    let rendered = SYSTEMD_TIMER_TEMPLATE.replace("{{HEARTBEAT_INTERVAL_MINUTES}}", &heartbeat_interval.to_string());
+    let rendered = SYSTEMD_TIMER_TEMPLATE.replace(
+        "{{HEARTBEAT_INTERVAL_MINUTES}}",
+        &heartbeat_interval.to_string(),
+    );
 
     let timer_path = Path::new("/etc/systemd/system/client-hw-info.timer");
 
     fs::write(timer_path, rendered)?;
 
-
     Ok(())
 }
 
 fn reload_and_enable_timer() -> Result<(), Box<dyn std::error::Error>> {
-
-    let reload_status = Command::new("systemctl")
-        .arg("daemon-reload")
-        .status()?;
+    let reload_status = Command::new("systemctl").arg("daemon-reload").status()?;
 
     if !reload_status.success() {
         return Err("systemctl daemon-reload failed".into());
@@ -144,9 +152,7 @@ fn reload_and_enable_timer() -> Result<(), Box<dyn std::error::Error>> {
         return Err("systemctl enable --now client-hw-info.timer failed".into());
     }
 
-
     Ok(())
-
 }
 
 #[cfg(test)]
@@ -210,6 +216,7 @@ mod tests {
         let port = 22;
         let ip_addr = "127.0.0.1".to_string();
         let price_per_hour = 1.25;
+        let skip_systemd = true;
 
         let result = self_register(
             &server.url(),
@@ -223,6 +230,7 @@ mod tests {
             &ip_addr,
             port,
             price_per_hour,
+            skip_systemd,
         );
 
         assert!(result.is_ok());
@@ -231,7 +239,5 @@ mod tests {
 
         assert_eq!(res_unwrap.node_id, "node-123");
         assert_eq!(res_unwrap.next_access_token, "token-abc");
-
-
     }
 }
