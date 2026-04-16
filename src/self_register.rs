@@ -50,6 +50,43 @@ pub(crate) fn self_register(
     price_per_hour: f64,
     skip_systemd: bool,
 ) -> Result<SelfRegisterResponse, Box<dyn std::error::Error>> {
+
+    let cfg_path = crate::config::config_file_path()?;
+
+    self_register_with_config_path(
+        api_url,
+        register_token,
+        node_hardware,
+        node_software,
+        node_system,
+        username,
+        ssh_key_id,
+        hostname,
+        ip_addr,
+        port,
+        price_per_hour,
+        skip_systemd,
+        &cfg_path,
+    )
+
+}
+
+fn self_register_with_config_path(
+    api_url: &str,
+    register_token: &str,
+    node_hardware: &NodeHardware,
+    node_software: &NodeSoftware,
+    node_system: &NodeSystem,
+    username: &str,
+    ssh_key_id: &str,
+    hostname: &str,
+    ip_addr: &String,
+    port: u16,
+    price_per_hour: f64,
+    skip_systemd: bool,
+    cfg_path: &PathBuf,
+) -> Result<SelfRegisterResponse, Box<dyn std::error::Error>> {
+
     let client = reqwest::blocking::Client::new();
 
     let final_endpoint = format!("{}/node/self-register", api_url.trim_end_matches('/'));
@@ -76,7 +113,6 @@ pub(crate) fn self_register(
         })?;
 
         info!("Successfully parsed self-register response. Writing new configuration file.");
-        let cfg_path = crate::config::config_file_path()?;
 
         match config::create_config_file(
             &cfg_path,
@@ -107,6 +143,8 @@ pub(crate) fn self_register(
         warn!("Self-register request failed with status {}", resp.status());
         Err(format!("self-register failed with status {}", resp.status()).into())
     }
+
+
 }
 
 fn create_systemd_service() -> Result<(), Box<dyn std::error::Error>> {
@@ -189,6 +227,12 @@ mod tests {
 
     #[test]
     fn test_self_register_success() {
+
+        let temp_dir = tempfile::tempdir().expect("temp dir should be created");
+        let cfg_path = temp_dir.path().join("config.env");
+
+        println!("temp config path: {}", cfg_path.display());
+
         let mut server = Server::new();
 
         let _mock = server
@@ -218,7 +262,7 @@ mod tests {
         let price_per_hour = 1.25;
         let skip_systemd = true;
 
-        let result = self_register(
+        let result = self_register_with_config_path(
             &server.url(),
             register_token,
             &hardware,
@@ -231,7 +275,14 @@ mod tests {
             port,
             price_per_hour,
             skip_systemd,
+            &cfg_path,
         );
+
+        let config = std::fs::read_to_string(&cfg_path).expect("config file should be written");
+
+        assert!(config.contains("NODE_ID=node-123"));
+        assert!(config.contains("AUTH_TOKEN=token-abc"));
+        assert!(config.contains(&format!("API_URL={}", server.url())));
 
         let res_unwrap = result.expect("self_register should succeed");
 
