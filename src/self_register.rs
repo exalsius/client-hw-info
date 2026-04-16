@@ -192,7 +192,7 @@ mod tests {
         let mut server = Server::new();
 
         let _mock = server
-            .mock("POST", "/self-register")
+            .mock("POST", "/node/self-register")
             .with_status(200)
             .with_header("content-type", "application/json")
             .with_body(
@@ -224,8 +224,8 @@ mod tests {
             &hardware,
             &software,
             &system,
-            private_key_id,
             username,
+            private_key_id,
             hostname,
             &ip_addr,
             port,
@@ -233,9 +233,7 @@ mod tests {
             skip_systemd,
         );
 
-        assert!(result.is_ok());
-
-        let res_unwrap = result.unwrap();
+        let res_unwrap = result.expect("self_register should succeed");
 
         assert_eq!(res_unwrap.node_id, "node-123");
         assert_eq!(res_unwrap.next_access_token, "token-abc");
