@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.2](https://github.com/exalsius/client-hw-info/compare/v2.8.1...v2.8.2) (2026-04-16)
+
+
+### Bug Fixes
+
+* fix test case and push crate ([70607b4](https://github.com/exalsius/client-hw-info/commit/70607b457d194ddb9a29766699b56f347b8aa317))
+
 ## [2.8.1](https://github.com/exalsius/client-hw-info/compare/v2.8.0...v2.8.1) (2026-04-07)
 
 
