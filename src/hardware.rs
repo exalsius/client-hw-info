@@ -129,7 +129,8 @@ fn list_pci_gpus() -> Result<Vec<GPU>, Box<dyn std::error::Error>> {
             .trim()
             .to_string();
 
-        if !(class.starts_with("0x03") || class.starts_with("0x12") || class.starts_with("0x0302")) {
+        if !(class.starts_with("0x03") || class.starts_with("0x12") || class.starts_with("0x0302"))
+        {
             continue;
         }
 

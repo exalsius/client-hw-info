@@ -62,7 +62,7 @@ struct CliArguments {
 
     /// skip systemd service creation when running self-registering
     #[argh(switch)]
-    skip_systemd: bool
+    skip_systemd: bool,
 }
 
 fn main() {
@@ -132,7 +132,7 @@ fn main() {
             &ip_addr,
             port,
             0.0,
-            skip_systemd
+            skip_systemd,
         ) {
             Ok(_) => {
                 info!("Successfully registered node");

@@ -42,10 +42,20 @@ pub(crate) fn lookup_configuration(
 
     if node_id.as_ref().map_or(false, |id| id != &env_node_id)
         || api_url.as_ref().map_or(false, |url| url != &env_api_url)
-        || auth_token.as_ref().map_or(false, |token| token != &env_auth_token)
+        || auth_token
+            .as_ref()
+            .map_or(false, |token| token != &env_auth_token)
     {
         info!("Configuration file does not match passed variables. Updating configuration file");
-        update_config_file(&cfg, &env_node_id, &env_api_url, &env_auth_token, node_id.as_deref(), api_url.as_deref(), auth_token.as_deref())?;
+        update_config_file(
+            &cfg,
+            &env_node_id,
+            &env_api_url,
+            &env_auth_token,
+            node_id.as_deref(),
+            api_url.as_deref(),
+            auth_token.as_deref(),
+        )?;
     }
 
     info!("Successfully loaded configuration from file");
@@ -63,9 +73,8 @@ fn update_config_file(
     env_auth_token: &str,
     node_id: Option<&str>,
     api_url: Option<&str>,
-    auth_token: Option<&str>
+    auth_token: Option<&str>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-
     let content = fs::read_to_string(config_file_path)?;
     let mut lines: Vec<String> = Vec::new();
 
@@ -75,7 +84,10 @@ fn update_config_file(
         } else if line.starts_with("API_URL=") {
             lines.push(format!("API_URL={}", api_url.unwrap_or(env_api_url)));
         } else if line.starts_with("AUTH_TOKEN=") {
-            lines.push(format!("AUTH_TOKEN={}", auth_token.unwrap_or(env_auth_token)));
+            lines.push(format!(
+                "AUTH_TOKEN={}",
+                auth_token.unwrap_or(env_auth_token)
+            ));
         } else {
             lines.push(line.to_string());
         }
@@ -84,7 +96,6 @@ fn update_config_file(
     fs::write(config_file_path, lines.join("\n"))?;
     info!("Successfully updated configuration file");
     Ok(())
-
 }
 
 /// Falls Datei fehlt: neu anlegen (0600) und Template reinschreiben
@@ -120,7 +131,6 @@ pub(crate) fn create_config_file(
     api_url: &str,
     auth_token: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-
     info!("Start creating new configuration file");
     let mut opts = OpenOptions::new();
     opts.create(true).write(true).truncate(true);

@@ -53,7 +53,6 @@ pub(crate) fn send_heartbeat(
 #[derive(Deserialize, Debug)]
 struct HeartbeatResponse {
     next_access_token: String,
-
 }
 
 #[derive(Serialize)]
