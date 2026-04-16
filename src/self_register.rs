@@ -50,7 +50,6 @@ pub(crate) fn self_register(
     price_per_hour: f64,
     skip_systemd: bool,
 ) -> Result<SelfRegisterResponse, Box<dyn std::error::Error>> {
-
     let cfg_path = crate::config::config_file_path()?;
 
     self_register_with_config_path(
@@ -68,7 +67,6 @@ pub(crate) fn self_register(
         skip_systemd,
         &cfg_path,
     )
-
 }
 
 fn self_register_with_config_path(
@@ -86,7 +84,6 @@ fn self_register_with_config_path(
     skip_systemd: bool,
     cfg_path: &PathBuf,
 ) -> Result<SelfRegisterResponse, Box<dyn std::error::Error>> {
-
     let client = reqwest::blocking::Client::new();
 
     let final_endpoint = format!("{}/node/self-register", api_url.trim_end_matches('/'));
@@ -143,8 +140,6 @@ fn self_register_with_config_path(
         warn!("Self-register request failed with status {}", resp.status());
         Err(format!("self-register failed with status {}", resp.status()).into())
     }
-
-
 }
 
 fn create_systemd_service() -> Result<(), Box<dyn std::error::Error>> {
@@ -227,7 +222,6 @@ mod tests {
 
     #[test]
     fn test_self_register_success() {
-
         let temp_dir = tempfile::tempdir().expect("temp dir should be created");
         let cfg_path = temp_dir.path().join("config.env");
 
