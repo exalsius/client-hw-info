@@ -8,6 +8,7 @@ mod system;
 use argh::FromArgs;
 use env_logger::{Builder, Env};
 use log::{error, info};
+use std::process::ExitCode;
 
 #[derive(FromArgs)]
 ///   Parameters for the client hardware info tool.
@@ -65,14 +66,14 @@ struct CliArguments {
     skip_systemd: bool,
 }
 
-fn main() {
+fn main() -> ExitCode {
     Builder::from_env(Env::default().default_filter_or("info")).init();
 
     let cli_arguments: CliArguments = argh::from_env();
 
     if cli_arguments.version {
         println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"),);
-        return;
+        return ExitCode::SUCCESS;
     }
 
     info!("Starting client hardware info tool");
@@ -81,7 +82,7 @@ fn main() {
         Ok(node_hardware) => node_hardware,
         Err(e) => {
             error!("Error: {}", e);
-            return;
+            return ExitCode::FAILURE;
         }
     };
 
@@ -91,7 +92,7 @@ fn main() {
 
     if cli_arguments.skip_heartbeat {
         info!("Hardware, Software, and OS details collected (heartbeat skipped by flag)");
-        return;
+        return ExitCode::SUCCESS;
     }
 
     if cli_arguments.self_register {
@@ -106,7 +107,7 @@ fn main() {
             error!(
                 "Error: self-registering requires register token, username, private key id, node name, ip address, port, and api url"
             );
-            return;
+            return ExitCode::FAILURE;
         }
 
         info!("Starting self-registering process");
@@ -136,11 +137,11 @@ fn main() {
         ) {
             Ok(_) => {
                 info!("Successfully registered node");
-                return;
+                return ExitCode::SUCCESS;
             }
             Err(e) => {
                 error!("Error: {}", e);
-                return;
+                return ExitCode::FAILURE;
             }
         }
     }
@@ -153,7 +154,7 @@ fn main() {
         Ok((node_id, api_url, auth_token)) => (node_id, api_url, auth_token),
         Err(e) => {
             error!("Error: {}", e);
-            return;
+            return ExitCode::FAILURE;
         }
     };
 
@@ -168,12 +169,15 @@ fn main() {
         Ok(new_auth_tkn) => new_auth_tkn,
         Err(e) => {
             error!("Error: {}", e);
-            return;
+            return ExitCode::FAILURE;
         }
     };
 
-    config::write_new_auth_token(&new_auth_tkn)
-        .expect("Failed writing new auth token to config file");
+    if let Err(e) = config::write_new_auth_token(&new_auth_tkn) {
+        error!("Error: {}", e);
+        return ExitCode::FAILURE;
+    }
 
     info!("Finished client hardware info tool");
+    ExitCode::SUCCESS
 }
