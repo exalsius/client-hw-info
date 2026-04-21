@@ -5,6 +5,7 @@ mod self_register;
 mod software;
 mod system;
 
+use crate::self_register::SelfRegisterParams;
 use argh::FromArgs;
 use env_logger::{Builder, Env};
 use log::{error, info};
@@ -121,29 +122,31 @@ fn main() -> ExitCode {
         let port = cli_arguments.port.unwrap();
         let skip_systemd = cli_arguments.skip_systemd;
 
-        match self_register::self_register(
-            &api_url,
-            &register_token,
-            &node_hardware,
-            &node_software,
-            &node_system,
-            &username,
-            &private_key_id,
-            &hostname,
-            &ip_addr,
+        let self_register_params = SelfRegisterParams {
+            api_url: &api_url,
+            register_token: &register_token,
+            username: &username,
+            node_hardware: &node_hardware,
+            node_software: &node_software,
+            node_system: &node_system,
+            ssh_key_id: &private_key_id,
+            hostname: &hostname,
+            ip_addr: &ip_addr,
             port,
-            0.0,
             skip_systemd,
-        ) {
+            price_per_hour: 0.0,
+        };
+
+        return match self_register::self_register(self_register_params) {
             Ok(_) => {
                 info!("Successfully registered node");
-                return ExitCode::SUCCESS;
+                ExitCode::SUCCESS
             }
             Err(e) => {
                 error!("Error: {}", e);
-                return ExitCode::FAILURE;
+                ExitCode::FAILURE
             }
-        }
+        };
     }
 
     let (node_id, api_endpoint, auth_tkn) = match config::lookup_configuration(

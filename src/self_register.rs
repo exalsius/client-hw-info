@@ -36,68 +36,53 @@ pub(crate) struct SelfRegisterResponse {
     next_access_token: String,
 }
 
+pub(crate) struct SelfRegisterParams<'a> {
+    pub api_url: &'a str,
+    pub register_token: &'a str,
+    pub node_hardware: &'a NodeHardware,
+    pub node_software: &'a NodeSoftware,
+    pub node_system: &'a NodeSystem,
+    pub username: &'a str,
+    pub ssh_key_id: &'a str,
+    pub hostname: &'a str,
+    pub ip_addr: &'a str,
+    pub port: u16,
+    pub price_per_hour: f64,
+    pub skip_systemd: bool,
+}
+
 pub(crate) fn self_register(
-    api_url: &str,
-    register_token: &str,
-    node_hardware: &NodeHardware,
-    node_software: &NodeSoftware,
-    node_system: &NodeSystem,
-    username: &str,
-    ssh_key_id: &str,
-    hostname: &str,
-    ip_addr: &String,
-    port: u16,
-    price_per_hour: f64,
-    skip_systemd: bool,
+    self_register_params: SelfRegisterParams<'_>,
 ) -> Result<SelfRegisterResponse, Box<dyn std::error::Error>> {
     let cfg_path = crate::config::config_file_path()?;
 
-    self_register_with_config_path(
-        api_url,
-        register_token,
-        node_hardware,
-        node_software,
-        node_system,
-        username,
-        ssh_key_id,
-        hostname,
-        ip_addr,
-        port,
-        price_per_hour,
-        skip_systemd,
-        &cfg_path,
-    )
+    self_register_with_config_path(&self_register_params, &cfg_path)
 }
 
 fn self_register_with_config_path(
-    api_url: &str,
-    register_token: &str,
-    node_hardware: &NodeHardware,
-    node_software: &NodeSoftware,
-    node_system: &NodeSystem,
-    username: &str,
-    ssh_key_id: &str,
-    hostname: &str,
-    ip_addr: &String,
-    port: u16,
-    price_per_hour: f64,
-    skip_systemd: bool,
+    self_register_params: &SelfRegisterParams<'_>,
     cfg_path: &PathBuf,
 ) -> Result<SelfRegisterResponse, Box<dyn std::error::Error>> {
     let client = reqwest::blocking::Client::new();
 
-    let final_endpoint = format!("{}/node/self-register", api_url.trim_end_matches('/'));
+    let final_endpoint = format!(
+        "{}/node/self-register",
+        self_register_params.api_url.trim_end_matches('/')
+    );
 
     let payload = SelfRegisterRequest {
-        register_token,
-        hardware: node_hardware,
-        software: node_software,
-        system: node_system,
-        ssh_key_id,
-        username,
-        hostname,
-        endpoint: &format!("{}:{}", ip_addr, port),
-        price_per_hour,
+        register_token: self_register_params.register_token,
+        hardware: self_register_params.node_hardware,
+        software: self_register_params.node_software,
+        system: self_register_params.node_system,
+        ssh_key_id: self_register_params.ssh_key_id,
+        username: self_register_params.username,
+        hostname: self_register_params.hostname,
+        endpoint: &format!(
+            "{}:{}",
+            self_register_params.ip_addr, self_register_params.port
+        ),
+        price_per_hour: self_register_params.price_per_hour,
     };
     info!("Sending self-register request to {}", final_endpoint);
     let resp = client.post(final_endpoint).json(&payload).send()?;
@@ -112,9 +97,9 @@ fn self_register_with_config_path(
         info!("Successfully parsed self-register response. Writing new configuration file.");
 
         match config::create_config_file(
-            &cfg_path,
+            cfg_path,
             &parsed.node_id,
-            api_url,
+            self_register_params.api_url,
             &parsed.next_access_token,
         ) {
             Ok(_) => {
@@ -129,7 +114,7 @@ fn self_register_with_config_path(
             }
         }
 
-        if !skip_systemd {
+        if !self_register_params.skip_systemd {
             create_systemd_service()?;
             create_systemd_timer(15)?;
             reload_and_enable_timer()?;
@@ -256,21 +241,22 @@ mod tests {
         let price_per_hour = 1.25;
         let skip_systemd = true;
 
-        let result = self_register_with_config_path(
-            &server.url(),
+        let self_register_params = SelfRegisterParams {
+            api_url: &server.url(),
             register_token,
-            &hardware,
-            &software,
-            &system,
+            node_hardware: &hardware,
+            node_software: &software,
+            node_system: &system,
             username,
-            private_key_id,
+            ssh_key_id: private_key_id,
             hostname,
-            &ip_addr,
+            ip_addr: &ip_addr,
             port,
             price_per_hour,
             skip_systemd,
-            &cfg_path,
-        );
+        };
+
+        let result = self_register_with_config_path(&self_register_params, &cfg_path);
 
         let config = std::fs::read_to_string(&cfg_path).expect("config file should be written");
 

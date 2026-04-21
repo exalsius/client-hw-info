@@ -40,11 +40,11 @@ pub(crate) fn lookup_configuration(
         return Err("API_URL or AUTH_TOKEN is empty".into());
     }
 
-    if node_id.as_ref().map_or(false, |id| id != &env_node_id)
-        || api_url.as_ref().map_or(false, |url| url != &env_api_url)
+    if node_id.as_ref().is_some_and(|id| id != &env_node_id)
+        || api_url.as_ref().is_some_and(|url| url != &env_api_url)
         || auth_token
             .as_ref()
-            .map_or(false, |token| token != &env_auth_token)
+            .is_some_and(|token| token != &env_auth_token)
     {
         info!("Configuration file does not match passed variables. Updating configuration file");
         update_config_file(
@@ -113,7 +113,7 @@ fn ensure_config_file(
         }
 
         create_config_file(
-            &path,
+            path,
             node_id.unwrap(),
             api_url.unwrap(),
             auth_token.unwrap(),

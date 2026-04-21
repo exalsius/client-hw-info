@@ -14,7 +14,7 @@ pub(crate) fn send_heartbeat(
 ) -> Result<String, Box<dyn std::error::Error>> {
     info!("Sending heartbeat");
     let client = reqwest::blocking::Client::new();
-    let final_endpoint = api_url.to_string() + "/node/" + node_id;
+    let final_endpoint = format!("{}/node/{}", api_url.trim_end_matches("/"), node_id);
 
     let payload = HeartbeatRequest {
         hardware: node_hardware,

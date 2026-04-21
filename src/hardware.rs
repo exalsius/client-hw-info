@@ -54,7 +54,7 @@ pub fn collect_client_hardware() -> Result<NodeHardware, Box<dyn std::error::Err
     let gpus = match list_pci_gpus() {
         Ok(gpus) => gpus,
         Err(e) => {
-            return Err(e.into());
+            return Err(e);
         }
     };
 
@@ -104,7 +104,7 @@ fn list_ethernet_connections() -> io::Result<Vec<(String, i32)>> {
     Ok(items)
 }
 
-fn list_pci_gpus() -> Result<Vec<GPU>, Box<dyn std::error::Error>> {
+fn list_pci_gpus() -> Result<Vec<Gpu>, Box<dyn std::error::Error>> {
     let mut all_gpus = Vec::new();
 
     let pci_db = Database::get_online().unwrap_or_else(|e| {
@@ -168,19 +168,19 @@ fn list_pci_gpus() -> Result<Vec<GPU>, Box<dyn std::error::Error>> {
         let vendor_mapped = pci_vendor.and_then(|v| map_vendor_to_api_enum(&v.name));
         let gpu_vram = gpu_vram_map.get(&device_string);
 
-        if vendor_mapped.is_some() && gpu_device.is_some() {
-            all_gpus.push(GPU {
-                vendor: vendor_mapped.unwrap(),
-                gpu_type: gpu_device.unwrap().name.to_owned(),
+        if let (Some(vendor), Some(device)) = (vendor_mapped, gpu_device) {
+            all_gpus.push(Gpu {
+                vendor,
+                gpu_type: device.name.to_owned(),
                 vram: *gpu_vram.unwrap_or(&0),
-            })
+            });
         }
     }
 
     Ok(all_gpus)
 }
 
-struct GPU {
+struct Gpu {
     vendor: String,
     gpu_type: String,
     vram: u64,
