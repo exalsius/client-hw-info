@@ -24,6 +24,18 @@ jobs:
       - name: Check formatting
         run: cargo fmt --check
 
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Check code conventions with Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
   build:
     runs-on: ubuntu-latest
     steps:
