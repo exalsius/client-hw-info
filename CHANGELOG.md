@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.3](https://github.com/exalsius/client-hw-info/compare/v2.8.2...v2.8.3) (2026-04-21)
+
+
+### Bug Fixes
+
+* add failure code instead of return for better error visibility ([2503841](https://github.com/exalsius/client-hw-info/commit/2503841479b427a8ec7befb77487084c7b578978))
+
 ## [2.8.2](https://github.com/exalsius/client-hw-info/compare/v2.8.1...v2.8.2) (2026-04-16)
 
 
